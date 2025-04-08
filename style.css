@@ -259,20 +259,15 @@ body.dark-mode .darkmode-btn:hover {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
+    align-items: flex-start; /* 섹션을 위쪽에 정렬 */
 }
 
 .prayer-section,
-.summary-section {
-    flex: 1 1 100%; /* 기본적으로 전체 너비를 차지 */
+.summary-section,
+.captured-section,
+.meditation-section {
+    flex: 1 1 48%; /* 화면이 넓을 때 두 섹션을 나란히 배치 */
 }
-
-@media (min-width: 768px) {
-    .prayer-section,
-    .summary-section {
-        flex: 1 1 48%; /* 화면이 넓을 때 두 섹션을 나란히 배치 */
-    }
-}
-
 /* 카드 공통 스타일 */
 .card {
     background: white;
