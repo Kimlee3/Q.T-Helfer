@@ -1,3 +1,47 @@
+// 1. 요소 선택
+const fetchBtn = document.getElementById('fetch-btn');
+const bibleRef = document.getElementById('bible-ref');
+const bibleText = document.getElementById('bible-text');
+const prayerText = document.getElementById('prayer-text');
+const capturedText = document.getElementById('captured-text');
+const meditationText = document.getElementById('meditation-text');
+const characterText = document.getElementById('character-text');
+const actionText = document.getElementById('action-text');
+const finalPrayer = document.getElementById('final-prayer');
+const saveBtn = document.getElementById('save-btn');
+const savedContent = document.getElementById('saved-content');
+const savedText = document.getElementById('saved-text');
+const copyBtn = document.getElementById('copy-btn');
+const darkModeToggle = document.getElementById('darkmode-toggle');
+const loadingIndicator = document.getElementById('loading-indicator');
+
+// 2. 성경 구절 파싱 함수 (개선된 버전)
+function parseReference(reference) {
+    reference = reference.trim();
+
+    if (!reference.includes(':')) {
+        throw new Error('구절 형식이 잘못되었습니다. 예: "로마서 1:1" 또는 "로마서 1:1-5"');
+    }
+
+    const [bookAndChapter, verse] = reference.split(':');
+    const lastSpaceIndex = bookAndChapter.lastIndexOf(' ');
+
+    if (lastSpaceIndex === -1) {
+        throw new Error('책 이름과 장이 올바르게 입력되지 않았습니다. 예: "로마서 1:1"');
+    }
+
+    const book = bookAndChapter.substring(0, lastSpaceIndex).trim();
+    const chapter = parseInt(bookAndChapter.substring(lastSpaceIndex + 1).trim(), 10);
+    const verseNumber = parseInt(verse.trim(), 10);
+
+    if (isNaN(chapter) || isNaN(verseNumber)) {
+        throw new Error('장 또는 절 번호가 유효하지 않습니다. 예: "로마서 1:1"');
+    }
+
+    return { book, chapter, verse: verseNumber };
+}
+
+
 // 3. 성경 구절 가져오기 함수 (API 버전으로 대체)
 async function fetchBibleVerses(reference) {
     try {
