@@ -21,12 +21,15 @@ input {
 }
 
 button {
-    background: #4CAF50;
+    background: linear-gradient(135deg, #4CAF50, #2E7D32);
     color: white;
     padding: 10px 15px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 button:hover {
@@ -88,7 +91,9 @@ textarea {
         padding: 0;
         font-size: 12pt;
     }
-}/* 다크 모드 스타일 */
+}
+
+/* 다크 모드 스타일 */
 body.dark-mode {
     background: #121212;
     color: #e0e0e0;
@@ -106,17 +111,13 @@ body.dark-mode input {
     border: 2px solid #444;
 }
 
-body.dark-mode .captured-section {
+body.dark-mode .prayer-section,
+body.dark-mode .captured-section,
+body.dark-mode .application-section {
     background: #252525;
 }
 
-/* 인쇄 시에는 다크 모드 무시 */
-@media print {
-    body.dark-mode {
-        background: white !important;
-        color: black !important;
-    }
-}/* 적용과 결단 섹션 */
+/* 적용과 결단 섹션 */
 .application-section {
     margin: 30px 0;
     padding: 20px;
@@ -135,9 +136,7 @@ body.dark-mode .captured-section {
     height: 120px;
 }
 
-body.dark-mode .application-section {
-    background: #1a2a3a;
-}/* PDF 버튼 스타일 */
+/* PDF 버튼 스타일 */
 #export-pdf {
     background: #ff4757;
     margin-top: 30px;
@@ -147,17 +146,7 @@ body.dark-mode .application-section {
     background: #ff6b81;
 }
 
-/* 기도 섹션 */
-.prayer-section {
-    margin-top: 25px;
-    padding: 20px;
-    background: #fff5f5;
-    border-radius: 8px;
-}
-
-body.dark-mode .prayer-section {
-    background: #2a1a1a;
-}/* 공유 섹션 */
+/* 공유 섹션 */
 #share-btn:hover {
     background: #4a5acf !important;
 }
@@ -166,39 +155,11 @@ body.dark-mode .prayer-section {
     border: 1px solid #ddd;
     border-radius: 4px;
     margin-right: 5px;
-}/* 기존 CSS에 추가할 내용 */
+}
 
 /* 입력 필드 애니메이션 */
 input, textarea, button {
     transition: all 0.3s ease;
-}
-
-/* 버튼 디자인 개선 */
-button {
-    background: linear-gradient(135deg, #4CAF50, #2E7D32);
-    font-weight: bold;
-    letter-spacing: 0.5px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-/* 섹션 디자인 개선 */
-.input-section, .prayer-section, .captured-section, 
-.meditation-section, .application-section {
-    margin-bottom: 25px;
-    padding: 20px;
-    border-radius: 8px;
-    background: rgba(255,255,255,0.8);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-}
-
-/* 다크 모드 개선 */
-body.dark-mode .input-section,
-body.dark-mode .prayer-section,
-body.dark-mode .captured-section,
-body.dark-mode .meditation-section,
-body.dark-mode .application-section {
-    background: rgba(30,30,30,0.8);
-    box-shadow: 0 2px 10px rgba(255,255,255,0.05);
 }
 
 /* 반응형 디자인 개선 */
@@ -240,7 +201,6 @@ body.dark-mode .application-section {
 /* 헤더 스타일 추가 */
 .app-header {
     margin-bottom: 30px;
-    position: relative;
 }
 
 .header-content {
@@ -313,13 +273,6 @@ body.dark-mode .darkmode-btn:hover {
     }
 }
 
-/* 큐티 섹션 전체 레이아웃 개선 */
-.qt-sections {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
 /* 카드 공통 스타일 */
 .card {
     background: white;
@@ -327,6 +280,11 @@ body.dark-mode .darkmode-btn:hover {
     padding: 20px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     margin-bottom: 20px;
+}
+
+body.dark-mode .card {
+    background: #2d2d2d;
+    box-shadow: 0 2px 10px rgba(255,255,255,0.05);
 }
 
 /* 섹션 제목 스타일 */
@@ -339,8 +297,8 @@ body.dark-mode .darkmode-btn:hover {
     gap: 8px;
 }
 
-.card h3 i {
-    font-size: 1.2em;
+body.dark-mode .card h3 {
+    color: #ecf0f1;
 }
 
 .section-description {
@@ -350,7 +308,10 @@ body.dark-mode .darkmode-btn:hover {
     font-style: italic;
 }
 
-/* 들어가는 기도와 본문 요약 섹션 나란히 배치 */
+body.dark-mode .section-description {
+    color: #bdc3c7;
+}
+
 .prayer-summary-container {
     display: flex;
     gap: 20px;
@@ -361,87 +322,4 @@ body.dark-mode .darkmode-btn:hover {
 .summary-section {
     flex: 1;
     min-width: 300px;
-}
-
-/* 붙잡은 말씀 섹션 */
-.captured-section {
-    background: #f9f9f9;
-}
-
-/* 적용과 결단 섹션 */
-.application-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
-
-.application-grid textarea {
-    height: 120px;
-}
-
-/* 반응형 디자인 */
-@media (max-width: 768px) {
-    .prayer-summary-container {
-        flex-direction: column;
-    }
-    
-    .application-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .card {
-        padding: 15px;
-    }
-}
-
-/* 다크 모드 스타일 */
-body.dark-mode .card {
-    background: #2d2d2d;
-    box-shadow: 0 2px 10px rgba(255,255,255,0.05);
-}
-
-body.dark-mode .card h3 {
-    color: #ecf0f1;
-}
-
-body.dark-mode .section-description {
-    color: #bdc3c7;
-}
-
-body.dark-mode .captured-section {
-    background: #252525;
-}
-
-/* 헤더 스타일 유지 */
-.app-header {
-    margin-bottom: 30px;
-}
-
-.header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.darkmode-btn {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 1.2rem;
-    padding: 8px;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-}
-
-.darkmode-btn:hover {
-    background: rgba(0,0,0,0.1);
-}
-
-body.dark-mode .darkmode-btn:hover {
-    background: rgba(255,255,255,0.1);
 }
