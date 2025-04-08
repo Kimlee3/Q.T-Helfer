@@ -208,3 +208,31 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.classList.toggle("dark-mode");
     });
 });
+// 복사하기 기능 추가
+copyBtn.addEventListener('click', () => {
+    const textToCopy = savedText.textContent; // 복사할 텍스트
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        alert('텍스트가 클립보드에 복사되었습니다.');
+    }).catch(err => {
+        console.error('복사 실패:', err);
+        alert('복사에 실패했습니다.');
+    });
+});
+
+// 공유하기 기능 추가
+const shareBtn = document.getElementById('share-btn'); // 공유하기 버튼 추가해야 함
+shareBtn.addEventListener('click', () => {
+    if (navigator.share) {
+        navigator.share({
+            title: document.title,
+            url: window.location.href
+        }).then(() => {
+            alert('페이지가 공유되었습니다.');
+        }).catch(err => {
+            console.error('공유 실패:', err);
+            alert('공유에 실패했습니다.');
+        });
+    } else {
+        alert('이 브라우저에서는 공유하기 기능을 사용할 수 없습니다.');
+    }
+});
