@@ -323,3 +323,15 @@ body.dark-mode .section-description {
     flex: 1;
     min-width: 300px;
 }
+
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.saved-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
