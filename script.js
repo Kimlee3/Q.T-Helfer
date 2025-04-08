@@ -205,3 +205,7 @@ if (shareBtn) {
     }
   });
 }
+/ 대체 API 예시 (John 3:16 가져오기)
+fetch("https://bible-api.com/john 3:16?translation=kjv")
+  .then(response => response.json())
+  .then(data => console.log(data.text));
