@@ -16,7 +16,7 @@ const darkModeToggle = document.getElementById('darkmode-toggle');
 const loadingIndicator = document.getElementById('loading-indicator');
 
 // CORS 프록시 URL을 환경 변수로 관리 (보안 강화)
-const PROXY_URL = process.env.PROXY_URL || 'https://cors-anywhere.herokuapp.com/';
+const PROXY_URL = 'https://api.allorigins.win/get?url=';
 
 // 복수 구절 파싱 지원
 function parseReference(reference) {
@@ -53,7 +53,7 @@ async function fetchBibleVerses(reference) {
         const parsedRef = parseReference(reference);
         const formattedRef = `${parsedRef.book}-${parsedRef.chapter}-${parsedRef.startVerse}`;
         const apiUrl = `https://m.ibibles.net/quote10.htm?kor/${formattedRef}`;
-        const proxyUrl = `${PROXY_URL}${apiUrl}`;
+        const proxyUrl = `${PROXY_URL}${encodeURIComponent(apiUrl)}`;
 
         // 로딩 상태 표시
         bibleText.value = "성경 본문을 가져오는 중...";
@@ -61,7 +61,8 @@ async function fetchBibleVerses(reference) {
         const response = await fetch(proxyUrl);
         if (!response.ok) throw new Error('API 요청 실패 (서버 응답 오류)');
 
-        const html = await response.text();
+        const data = await response.json();
+        const html = data.contents;
 
         // HTML에서 본문 추출 (파싱)
         const extractText = (html) => {
