@@ -306,6 +306,7 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // 복사 버튼 이벤트
     copyBtn.addEventListener('click', () => {
+        const savedText = document.getElementById('saved-text'); // 추가 선언
         const textToCopy = savedText.textContent;
         navigator.clipboard.writeText(textToCopy).then(() => {
             showNotification('내용이 클립보드에 복사되었습니다.', 'success');
@@ -317,6 +318,7 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // 공유하기 버튼 이벤트
     shareBtn.addEventListener('click', () => {
+        const savedText = document.getElementById('saved-text'); // 추가 선언
         if (navigator.share) {
             navigator.share({
                 title: '큐티 도우미 - 오늘의 묵상',
