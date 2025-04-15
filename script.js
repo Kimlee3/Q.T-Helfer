@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const darkModeToggle = document.getElementById('darkmode-toggle');
     const loadingIndicator = document.getElementById('loading-indicator');
     const recentSearches = document.getElementById('recent-searches');
+    const dailyDevotionalBtn = document.getElementById('daily-devotional-btn');
     
     // 다크 모드 설정 불러오기
     if (localStorage.getItem('darkMode') === 'true') {
@@ -340,6 +341,90 @@ const qtData = {
             card.style.animationDelay = `${index * 0.1}s`;
         });
     }, 100);
+    
+    // 대체 프록시 URL 사용
+    const CORS_PROXY_URL = 'https://corsproxy.io/?';
+
+    // 오늘의 본문 말씀 가져오기 함수
+    async function fetchDailyDevotional() {
+        try {
+            loadingIndicator.style.display = 'inline-block';
+            dailyDevotionalBtn.disabled = true;
+            
+            // bible.asher.design에서 오늘의 본문 가져오기
+            const asherBibleUrl = 'https://bible.asher.design/quiettime.php';
+            const proxyUrl = `${CORS_PROXY_URL}${encodeURIComponent(asherBibleUrl)}`;
+            
+            console.log("요청 URL:", proxyUrl); // 디버깅용
+            
+            const response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error('API 요청 실패 (상태 코드: ' + response.status + ')');
+            
+            const text = await response.text();
+            
+            // HTML 파싱
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(text, 'text/html');
+            
+            console.log("파싱된 문서:", doc); // 디버깅용
+            
+            // 더 유연한 선택자로 검색 (실제 사이트 구조 파악 후 수정 필요)
+            const bibleReference = doc.querySelector('h1, h2, h3, .title, .reference') || 
+                                 doc.querySelector('div[class*="title"], div[class*="reference"]');
+            
+            const scriptureText = doc.querySelector('div[class*="content"], div[class*="scripture"], div[class*="bible"], p');
+            
+            // 디버깅 정보
+            console.log("참조:", bibleReference?.textContent);
+            console.log("본문:", scriptureText?.textContent);
+            
+            if (!scriptureText || !scriptureText.textContent || scriptureText.textContent.trim() === '') {
+                // 대체 방법: 전체 HTML 내용에서 의미 있는 텍스트 추출
+                const bodyText = doc.body.textContent.trim();
+                if (bodyText) {
+                    // 간단한 본문 가져오기
+                    bibleText.value = `📖 오늘의 묵상 말씀\n${bodyText}\n`;
+                    return true;
+                }
+                throw new Error('말씀 본문을 찾을 수 없습니다');
+            }
+            
+            // 검색창에 참조 표시 및 본문 표시
+            const refText = bibleReference ? bibleReference.textContent.trim() : '오늘의 말씀';
+            bibleRef.value = refText;
+            bibleText.value = `📖 ${refText}\n${scriptureText.textContent.trim()}\n`;
+            
+            return true;
+        } catch (error) {
+            console.error('오늘의 본문 가져오기 실패:', error);
+            bibleText.value = `오늘의 본문을 가져오는데 실패했습니다: ${error.message}`;
+            return false;
+        } finally {
+            loadingIndicator.style.display = 'none';
+            dailyDevotionalBtn.disabled = false;
+        }
+    }
+
+    // 검색 기록에 추가하는 함수
+    function addToRecentSearches(reference) {
+        let searches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+        if (!searches.includes(reference)) {
+            searches.unshift(reference);
+            if (searches.length > 5) searches.pop(); // 최대 5개 유지
+            localStorage.setItem('recentSearches', JSON.stringify(searches));
+            updateRecentSearchesDropdown(searches);
+        }
+    }
+
+    // 오늘의 본문 버튼 이벤트 리스너
+    dailyDevotionalBtn.addEventListener('click', async () => {
+        try {
+            await fetchDailyDevotional();
+        } catch (error) {
+            alert('오늘의 본문을 가져오는데 실패했습니다. 다시 시도해주세요.');
+            console.error(error);
+        }
+    });
 });
 
 // CSS 클래스 추가
