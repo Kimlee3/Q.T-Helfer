@@ -236,3 +236,18 @@ shareBtn.addEventListener('click', () => {
         alert('이 브라우저에서는 공유하기 기능을 사용할 수 없습니다.');
     }
 });
+
+// QT 내용 수집
+const date = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+const qtData = {
+    "날짜": date,
+    "들어가는 기도": prayerText.value.trim(),
+    "본문 요약": summaryText?.value.trim(),
+    "붙잡은 말씀": capturedText.value.trim(),
+    "느낌과 묵상": meditationText.value.trim(),
+    "적용과 결단": {
+        "성품": characterText.value.trim(),
+        "행동": actionText.value.trim()
+    },
+    "올려드리는 기도": finalPrayer.value.trim()
+};
