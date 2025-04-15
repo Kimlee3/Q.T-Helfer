@@ -185,21 +185,40 @@ fetchBtn.addEventListener('click', async () => {
 });
 
 saveBtn.addEventListener("click", () => {
+    // 현재 날짜 가져오기 (YYYY년 MM월 DD일 형식)
+    const now = new Date();
+    const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+    const currentDate = now.toLocaleDateString('ko-KR', options);
+    
     const savedData = {
-        "들어가는 기도": prayerText.value,
-        "붙잡은 말씀": capturedText.value,
-        "느낌과 묵상": meditationText.value,
-        "성품": characterText.value,
-        "행동": actionText.value,
-        "올려드리는 기도": finalPrayer.value,
+        "📅 날짜": currentDate,
+        "🙏 들어가는 기도": prayerText.value,
+        "📖 붙잡은 말씀": capturedText.value,
+        "💭 느낌과 묵상": meditationText.value,
+        "✍️ 적용과 결단": "", // 이 부분은 아래에서 별도로 처리
+        "❤️ 성품": characterText.value,
+        "🚶 행동": actionText.value,
+        "🙌 올려드리는 기도": finalPrayer.value
     };
 
-    // 사용자 친화적으로 데이터 표시
+    // 적용과 결단 섹션을 별도로 구성
+    const applicationContent = `적용과 결단:\n\n성품: ${characterText.value}\n행동: ${actionText.value}\n`;
+    savedData["✍️ 적용과 결단"] = applicationContent;
+
+    // 사용자 친화적으로 데이터 표시 (날짜를 가장 위에)
     savedText.textContent = Object.entries(savedData)
-        .map(([title, content]) => `${title}:\n${content}\n`)
+        .map(([title, content]) => {
+            if (title === "❤️ 성품" || title === "🚶 행동") {
+                return ""; // 성품과 행동은 적용과 결단에 포함되었으므로 별도로 표시하지 않음
+            }
+            return `${title}\n${content}\n`;
+        })
         .join("\n");
 
     savedContent.style.display = "block";
+    
+    // 저장 후 스크롤 이동
+    savedContent.scrollIntoView({ behavior: 'smooth' });
 });
 
 document.addEventListener("DOMContentLoaded", () => {
