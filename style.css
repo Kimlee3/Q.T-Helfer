@@ -330,3 +330,41 @@ body.dark-mode .section-description {
     justify-content: center;
     gap: 10px;
 }
+
+/* 오늘의 본문 버튼 스타일 */
+#daily-devotional-btn {
+    background: linear-gradient(135deg, #3F51B5, #303F9F);
+    margin-left: 5px;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+#daily-devotional-btn:hover {
+    background: #3949AB;
+}
+
+/* 반응형 디자인을 위한 수정 */
+@media (max-width: 768px) {
+    .search-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .search-controls input,
+    .search-controls button {
+        width: 100%;
+        margin: 0;
+    }
+    
+    #daily-devotional-btn {
+        margin-left: 0;
+    }
+}
