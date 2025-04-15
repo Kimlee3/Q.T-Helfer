@@ -14,6 +14,7 @@ const savedText = document.getElementById('saved-text');
 const copyBtn = document.getElementById('copy-btn');
 const darkModeToggle = document.getElementById('darkmode-toggle');
 const loadingIndicator = document.getElementById('loading-indicator');
+const dailyDevotionalBtn = document.getElementById('daily-devotional-btn');
 
 // CORS 프록시 URL을 환경 변수로 관리 (보안 강화)
 const PROXY_URL = 'https://api.allorigins.win/get?url=';
@@ -251,3 +252,70 @@ const qtData = {
     },
     "올려드리는 기도": finalPrayer.value.trim()
 };
+
+// 오늘의 본문 말씀 가져오기 함수
+async function fetchDailyDevotional() {
+    try {
+        loadingIndicator.style.display = 'inline-block';
+        dailyDevotionalBtn.disabled = true;
+        
+        // bible.asher.design에서 오늘의 본문 가져오기
+        const asherBibleUrl = 'https://bible.asher.design/quiettime.php';
+        const proxyUrl = `${PROXY_URL}${encodeURIComponent(asherBibleUrl)}`;
+        
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error('API 요청 실패 (서버 응답 오류)');
+        
+        const data = await response.json();
+        const html = data.contents;
+        
+        // HTML 파싱
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        // 필요한 정보 추출
+        const bibleReference = doc.querySelector('.bible-reference, h2')?.textContent || '오늘의 말씀';
+        const scriptureText = doc.querySelector('.bible-content, .scripture-text')?.textContent || '';
+        
+        // 추출한 본문이 없을 경우 에러 처리
+        if (!scriptureText || scriptureText.trim() === '') {
+            throw new Error('말씀 본문을 찾을 수 없습니다');
+        }
+        
+        // 검색창에 참조 표시 및 본문 표시
+        bibleRef.value = bibleReference.trim();
+        bibleText.value = `📖 ${bibleReference.trim()}\n${scriptureText.trim()}\n`;
+        
+        // 검색 기록에 추가 (선택적)
+        addToRecentSearches(bibleReference.trim());
+        
+        return true;
+    } catch (error) {
+        console.error('오늘의 본문 가져오기 실패:', error);
+        bibleText.value = `오늘의 본문을 가져오는데 실패했습니다: ${error.message}`;
+        return false;
+    } finally {
+        loadingIndicator.style.display = 'none';
+        dailyDevotionalBtn.disabled = false;
+    }
+}
+
+// 검색 기록에 추가하는 함수 (선택적)
+function addToRecentSearches(reference) {
+    const recentSearches = document.getElementById('recent-searches');
+    if (!Array.from(recentSearches.options).some(option => option.value === reference)) {
+        const option = document.createElement('option');
+        option.value = reference;
+        recentSearches.appendChild(option);
+    }
+}
+
+// 오늘의 본문 버튼 이벤트 리스너
+dailyDevotionalBtn.addEventListener('click', async () => {
+    try {
+        await fetchDailyDevotional();
+    } catch (error) {
+        alert('오늘의 본문을 가져오는데 실패했습니다. 다시 시도해주세요.');
+        console.error(error);
+    }
+});
