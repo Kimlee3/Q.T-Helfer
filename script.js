@@ -223,9 +223,17 @@ saveBtn.addEventListener("click", () => {
 
 document.addEventListener("DOMContentLoaded", () => {
     const darkModeToggle = document.getElementById("darkmode-toggle");
-
+    
     darkModeToggle.addEventListener("click", () => {
         document.body.classList.toggle("dark-mode");
+        
+        // 아이콘 변경 (달/해)
+        const icon = darkModeToggle.querySelector('i');
+        if (document.body.classList.contains('dark-mode')) {
+            icon.classList.replace('fa-moon', 'fa-sun');
+        } else {
+            icon.classList.replace('fa-sun', 'fa-moon');
+        }
     });
 });
 // 복사하기 기능 추가
