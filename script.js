@@ -267,18 +267,19 @@ document.addEventListener("DOMContentLoaded", function() {
             weekday: 'long'
         });
         
-        // QT 내용 수집
-        const qtData = {
-            "날짜": date,
-            "본문": bibleText.value.trim(),
-            "들어가는 기도": document.getElementById('prayer-text').value.trim(),
-            "본문 요약": document.getElementById('summary-text')?.value.trim(),
-            "붙잡은 말씀": document.getElementById('captured-text').value.trim(),
-            "느낌과 묵상": document.getElementById('meditation-text').value.trim(),
-            "적용 - 성품": document.getElementById('character-text').value.trim(),
-            "적용 - 행동": document.getElementById('action-text').value.trim(),
-            "올려드리는 기도": document.getElementById('final-prayer').value.trim()
-        };
+       // QT 내용 수집
+const currentDate = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+const qtData = {
+    "날짜": currentDate,
+    // "본문" 항목 제거함
+    "들어가는 기도": document.getElementById('prayer-text').value.trim(),
+    "본문 요약": document.getElementById('summary-text')?.value.trim(),
+    "붙잡은 말씀": document.getElementById('captured-text').value.trim(),
+    "느낌과 묵상": document.getElementById('meditation-text').value.trim(),
+    "적용과 결단 - 성품": document.getElementById('character-text').value.trim(),
+    "적용과 결단 - 행동": document.getElementById('action-text').value.trim(),
+    "올려드리는 기도": document.getElementById('final-prayer').value.trim()
+};
         
         // 사용자 친화적 형식으로 표시
         let formattedContent = `# 큐티 기록: ${date}\n\n`;
@@ -306,7 +307,6 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // 복사 버튼 이벤트
     copyBtn.addEventListener('click', () => {
-        const savedText = document.getElementById('saved-text'); // 추가 선언
         const textToCopy = savedText.textContent;
         navigator.clipboard.writeText(textToCopy).then(() => {
             showNotification('내용이 클립보드에 복사되었습니다.', 'success');
@@ -318,7 +318,6 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // 공유하기 버튼 이벤트
     shareBtn.addEventListener('click', () => {
-        const savedText = document.getElementById('saved-text'); // 추가 선언
         if (navigator.share) {
             navigator.share({
                 title: '큐티 도우미 - 오늘의 묵상',
