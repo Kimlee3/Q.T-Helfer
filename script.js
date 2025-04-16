@@ -3,12 +3,14 @@ const fetchBtn = document.getElementById('fetch-btn');
 const bibleRef = document.getElementById('bible-ref');
 const bibleText = document.getElementById('bible-text');
 const prayerText = document.getElementById('prayer-text');
+const summaryText = document.getElementById('summary-text'); // 요약 요소 추가
 const capturedText = document.getElementById('captured-text');
 const meditationText = document.getElementById('meditation-text');
 const characterText = document.getElementById('character-text');
 const actionText = document.getElementById('action-text');
 const finalPrayer = document.getElementById('final-prayer');
 const saveBtn = document.getElementById('save-btn');
+const shareBtn = document.getElementById('share-btn');
 const savedContent = document.getElementById('saved-content');
 const savedText = document.getElementById('saved-text');
 const copyBtn = document.getElementById('copy-btn');
@@ -18,6 +20,9 @@ const dailyDevotionalBtn = document.getElementById('daily-devotional-btn');
 
 // CORS 프록시 URL을 환경 변수로 관리 (보안 강화)
 const PROXY_URL = 'https://api.allorigins.win/get?url=';
+
+// 저장 상태 추적
+let isSaved = false;
 
 // 복수 구절 파싱 지원
 function parseReference(reference) {
@@ -174,6 +179,9 @@ fetchBtn.addEventListener('click', async () => {
         // 변경된 부분: 새 API 함수 사용
         const response = await fetchBibleVerses(bibleRef.value);
         bibleText.value = response;
+        
+        // 저장 상태 초기화
+        isSaved = false;
 
     } catch (error) {
         bibleText.value = `오류: ${error.message}`;
@@ -190,35 +198,81 @@ saveBtn.addEventListener("click", () => {
     const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
     const currentDate = now.toLocaleDateString('ko-KR', options);
     
+    // 성경 참조 구절만 저장
+    const bibleReference = bibleRef.value.trim();
+    
     const savedData = {
         "📅 날짜": currentDate,
-        "🙏 들어가는 기도": prayerText.value,
-        "📖 붙잡은 말씀": capturedText.value,
-        "💭 느낌과 묵상": meditationText.value,
-        "✍️ 적용과 결단": "", // 이 부분은 아래에서 별도로 처리
-        "❤️ 성품": characterText.value,
-        "🚶 행동": actionText.value,
-        "🙌 올려드리는 기도": finalPrayer.value
+        "📖 말씀": bibleReference ? `${bibleReference}` : "", // 본문 내용 없이 참조만
+        "🙏 들어가는 기도": prayerText.value.trim(),
+        "📝 본문 요약": summaryText ? summaryText.value.trim() : "",
+        "📖 붙잡은 말씀": capturedText.value.trim(),
+        "💭 느낌과 묵상": meditationText.value.trim(),
+        "✍️ 적용과 결단": "",
+        "❤️ 성품": characterText.value.trim(),
+        "🚶 행동": actionText.value.trim(),
+        "🙌 올려드리는 기도": finalPrayer.value.trim()
     };
 
-    // 적용과 결단 섹션을 별도로 구성
-    const applicationContent = `적용과 결단:\n\n성품: ${characterText.value}\n행동: ${actionText.value}\n`;
+    // 적용과 결단 섹션을 별도로 구성 (줄 간격 줄임)
+    let applicationContent = "성품: " + characterText.value.trim();
+    if (actionText.value.trim()) {
+        applicationContent += "\n행동: " + actionText.value.trim();
+    }
     savedData["✍️ 적용과 결단"] = applicationContent;
 
     // 사용자 친화적으로 데이터 표시 (날짜를 가장 위에)
-    savedText.textContent = Object.entries(savedData)
-        .map(([title, content]) => {
-            if (title === "❤️ 성품" || title === "🚶 행동") {
-                return ""; // 성품과 행동은 적용과 결단에 포함되었으므로 별도로 표시하지 않음
-            }
-            return `${title}\n${content}\n`;
-        })
-        .join("\n");
-
+    let formattedText = "";
+    
+    // 날짜 먼저 추가
+    formattedText += `${savedData["📅 날짜"]}\n\n`;
+    
+    // 말씀 참조 추가
+    if (savedData["📖 말씀"]) {
+        formattedText += `📖 ${savedData["📖 말씀"]}\n\n`;
+    }
+    
+    // 기도 추가
+    if (savedData["🙏 들어가는 기도"]) {
+        formattedText += `🙏 들어가는 기도\n${savedData["🙏 들어가는 기도"]}\n\n`;
+    }
+    
+    // 요약 추가
+    if (savedData["📝 본문 요약"]) {
+        formattedText += `📝 본문 요약\n${savedData["📝 본문 요약"]}\n\n`;
+    }
+    
+    // 붙잡은 말씀 추가
+    if (savedData["📖 붙잡은 말씀"]) {
+        formattedText += `📖 붙잡은 말씀\n${savedData["📖 붙잡은 말씀"]}\n\n`;
+    }
+    
+    // 느낌과 묵상 추가
+    if (savedData["💭 느낌과 묵상"]) {
+        formattedText += `💭 느낌과 묵상\n${savedData["💭 느낌과 묵상"]}\n\n`;
+    }
+    
+    // 적용과 결단 추가 (줄 간격 줄임)
+    if (characterText.value.trim() || actionText.value.trim()) {
+        formattedText += `✍️ 적용과 결단\n${applicationContent}\n\n`;
+    }
+    
+    // 올려드리는 기도 추가
+    if (savedData["🙌 올려드리는 기도"]) {
+        formattedText += `🙌 올려드리는 기도\n${savedData["🙌 올려드리는 기도"]}`;
+    }
+    
+    savedText.textContent = formattedText;
     savedContent.style.display = "block";
     
     // 저장 후 스크롤 이동
     savedContent.scrollIntoView({ behavior: 'smooth' });
+    
+    // 저장 상태 업데이트
+    isSaved = true;
+    
+    // 저장 완료 알림
+    alert('큐티 내용이 저장되었습니다.');
 });
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -236,6 +290,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
+
 // 복사하기 기능 추가
 copyBtn.addEventListener('click', () => {
     const textToCopy = savedText.textContent; // 복사할 텍스트
@@ -247,15 +302,21 @@ copyBtn.addEventListener('click', () => {
     });
 });
 
-// 공유하기 기능 추가
-const shareBtn = document.getElementById('share-btn'); // 공유하기 버튼 추가해야 함
+// 공유하기 기능 개선
 shareBtn.addEventListener('click', () => {
+    // 저장되지 않은 경우 안내 메시지 표시
+    if (!isSaved) {
+        alert('먼저 저장하기 버튼을 눌러 큐티 내용을 저장해주세요.');
+        return;
+    }
+    
     if (navigator.share) {
+        // 저장된 텍스트를 공유
         navigator.share({
-            title: document.title,
-            url: window.location.href
+            title: '큐티 도우미 - 오늘의 묵상',
+            text: savedText.textContent
         }).then(() => {
-            alert('페이지가 공유되었습니다.');
+            alert('큐티 내용이 공유되었습니다.');
         }).catch(err => {
             console.error('공유 실패:', err);
             alert('공유에 실패했습니다.');
@@ -264,21 +325,6 @@ shareBtn.addEventListener('click', () => {
         alert('이 브라우저에서는 공유하기 기능을 사용할 수 없습니다.');
     }
 });
-
-// QT 내용 수집
-const date = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
-const qtData = {
-    "날짜": date,
-    "들어가는 기도": prayerText.value.trim(),
-    "본문 요약": summaryText?.value.trim(),
-    "붙잡은 말씀": capturedText.value.trim(),
-    "느낌과 묵상": meditationText.value.trim(),
-    "적용과 결단": {
-        "성품": characterText.value.trim(),
-        "행동": actionText.value.trim()
-    },
-    "올려드리는 기도": finalPrayer.value.trim()
-};
 
 // 오늘의 본문 말씀 가져오기 함수
 async function fetchDailyDevotional() {
@@ -313,6 +359,9 @@ async function fetchDailyDevotional() {
         bibleRef.value = bibleReference.trim();
         bibleText.value = `📖 ${bibleReference.trim()}\n${scriptureText.trim()}\n`;
         
+        // 저장 상태 초기화
+        isSaved = false;
+        
         // 검색 기록에 추가 (선택적)
         addToRecentSearches(bibleReference.trim());
         
@@ -344,5 +393,15 @@ dailyDevotionalBtn.addEventListener('click', async () => {
     } catch (error) {
         alert('오늘의 본문을 가져오는데 실패했습니다. 다시 시도해주세요.');
         console.error(error);
+    }
+});
+
+// 입력 필드에 변경이 있을 때 저장 상태 초기화
+const inputFields = [prayerText, summaryText, capturedText, meditationText, characterText, actionText, finalPrayer];
+inputFields.forEach(field => {
+    if (field) {
+        field.addEventListener('input', () => {
+            isSaved = false;
+        });
     }
 });
