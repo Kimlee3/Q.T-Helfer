@@ -1,0 +1,38 @@
+{
+  "name": "q.t-helfer-upgrade",
+  "private": true,
+  "version": "1.0.0",
+  "description": "A modern, upgraded version of the Q.T-Helfer application.",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm:dev:vite\" \"npm:dev:api\"",
+    "dev:vite": "vite",
+    "dev:api": "node api-server.cjs",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kimlee3/Q.T-Helfer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Kimlee3/Q.T-Helfer/issues"
+  },
+  "homepage": "https://github.com/Kimlee3/Q.T-Helfer#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "vite": "^5.3.3"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.0.2",
+    "express": "^5.1.0",
+    "jsdom": "^26.1.0",
+    "puppeteer": "^24.20.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.9.1"
+  }
+}
