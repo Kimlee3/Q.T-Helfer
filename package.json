@@ -5,9 +5,7 @@
   "description": "A modern, upgraded version of the Q.T-Helfer application.",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm:dev:vite\" \"npm:dev:api\"",
-    "dev:vite": "vite",
-    "dev:api": "node api-server.cjs",
+    "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },

@@ -1,4 +1,5 @@
-const puppeteer = require('puppeteer');
+const chromium = require('@sparticuz/chromium');
+const puppeteer = require('puppeteer-core');
 
 module.exports = async (req, res) => {
   let browser;
@@ -7,7 +8,13 @@ module.exports = async (req, res) => {
     res.setHeader('Access-Control-Allow-Methods', 'GET');
     res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=3600');
 
-    browser = await puppeteer.launch({ headless: true }); // headless: 'new' for newer versions
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+      ignoreHTTPSErrors: true,
+    });
     const page = await browser.newPage();
     await page.goto('https://bible.asher.design/quiettime.php', { waitUntil: 'networkidle2' }); // 네트워크 활동이 없을 때까지 기다림
 
