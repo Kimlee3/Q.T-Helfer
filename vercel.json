@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/**/*.js",
+      "src": "api/**/*.cjs",
       "use": "@vercel/node"
     },
     {
@@ -24,10 +24,10 @@
     }
   ],
   "functions": {
-    "api/daily-passage.js": {
+    "api/daily-passage.cjs": {
       "maxDuration": 30
     },
-    "api/posts.js": {
+    "api/posts.cjs": {
       "maxDuration": 10
     }
   }
