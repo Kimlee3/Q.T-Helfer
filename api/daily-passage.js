@@ -1,7 +1,7 @@
-const chromium = require('@sparticuz/chromium');
-const puppeteer = require('puppeteer-core');
+import chromium from '@sparticuz/chromium';
+import puppeteer from 'puppeteer-core';
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   let browser;
   try {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -81,4 +81,4 @@ module.exports = async (req, res) => {
       await browser.close();
     }
   }
-};
+}

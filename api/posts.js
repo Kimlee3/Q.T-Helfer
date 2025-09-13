@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 // MongoDB 연결 함수
 const connectDB = async () => {
@@ -29,7 +29,7 @@ const PostSchema = new mongoose.Schema({
 // Post 모델 생성
 const Post = mongoose.models.Post || mongoose.model('Post', PostSchema);
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -135,4 +135,4 @@ module.exports = async (req, res) => {
   } else {
     res.status(405).json({ message: 'Method Not Allowed' });
   }
-};
+}
