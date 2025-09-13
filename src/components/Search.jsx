@@ -15,7 +15,7 @@ function Search({
         <div className="search-controls">
           <input
             type="text"
-            value={bibleRef}
+            value={bibleRef || ""} // Ensure value is always defined
             onChange={(e) => setBibleRef(e.target.value)}
             placeholder="예) 로마서 1:1-10, 요한복음 1:1-3"
           />

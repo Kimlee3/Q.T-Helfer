@@ -101,28 +101,34 @@ export default async function handler(req, res) {
       return res.status(500).json({ message: 'Error fetching posts', details: error.message });
     }
   } else if (req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk.toString();
-    });
-    req.on('end', async () => {
-      try {
-        const { title, content, author } = JSON.parse(body);
-        if (!title || !content || !author) {
-          return res.status(400).json({ message: 'Title, content, and author are required' });
-        }
-        const newPost = new Post({
+    try {
+      const { title, content, author } = req.body;
+
+      if (!title || !content || !author) {
+        return res.status(400).json({ message: 'All fields are required' });
+      }
+
+      if (mongoose.connections[0].readyState === 1) {
+        // MongoDB에 저장
+        const newPost = new Post({ title, content, author });
+        await newPost.save();
+        return res.status(201).json(newPost);
+      } else {
+        // 메모리 저장소에 저장
+        const newPost = {
+          _id: String(nextId++),
           title,
           content,
           author,
-        });
-        await newPost.save();
+          createdAt: new Date().toISOString(),
+        };
+        posts.push(newPost);
         return res.status(201).json(newPost);
-      } catch (error) {
-        console.error('Error creating post:', error);
-        return res.status(400).json({ message: 'Invalid JSON or missing fields', details: error.message });
       }
-    });
+    } catch (error) {
+      console.error('Error creating post:', error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
   } else if (req.method === 'PUT') { // PUT 요청 처리 (게시글 수정)
     const urlParts = req.url.split('/');
     const id = urlParts[urlParts.length - 1];
