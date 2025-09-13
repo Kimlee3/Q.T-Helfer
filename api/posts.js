@@ -1,5 +1,25 @@
 import mongoose from 'mongoose';
 
+// 로컬 개발용 메모리 저장소
+let posts = [
+  {
+    _id: '1',
+    title: '첫 번째 게시글',
+    content: '안녕하세요! 첫 번째 게시글입니다.',
+    author: '관리자',
+    createdAt: new Date().toISOString()
+  },
+  {
+    _id: '2', 
+    title: 'QT 헬퍼 사용법',
+    content: 'QT 헬퍼를 사용하여 매일 말씀을 읽어보세요.',
+    author: '관리자',
+    createdAt: new Date().toISOString()
+  }
+];
+
+let nextId = 3;
+
 // MongoDB 연결 함수
 const connectDB = async () => {
   if (mongoose.connections[0].readyState) {
@@ -45,16 +65,32 @@ export default async function handler(req, res) {
       const urlParts = req.url.split('/');
       const id = urlParts[urlParts.length - 1];
 
-      if (mongoose.Types.ObjectId.isValid(id)) { // ID가 유효한 ObjectId인 경우, 특정 게시글 조회
-        const post = await Post.findById(id);
-        if (post) {
-          return res.status(200).json(post);
-        } else {
-          return res.status(404).json({ message: 'Post not found' });
+      // MongoDB 연결 상태 확인
+      if (mongoose.connections[0].readyState === 1) {
+        // MongoDB 연결된 경우
+        if (mongoose.Types.ObjectId.isValid(id)) { // ID가 유효한 ObjectId인 경우, 특정 게시글 조회
+          const post = await Post.findById(id);
+          if (post) {
+            return res.status(200).json(post);
+          } else {
+            return res.status(404).json({ message: 'Post not found' });
+          }
+        } else { // ID가 없거나 유효하지 않은 경우, 전체 게시글 목록 조회
+          const posts = await Post.find({});
+          return res.status(200).json(posts);
         }
-      } else { // ID가 없거나 유효하지 않은 경우, 전체 게시글 목록 조회
-        const posts = await Post.find({});
-        return res.status(200).json(posts);
+      } else {
+        // MongoDB 연결되지 않은 경우 메모리 저장소 사용
+        if (id && id !== 'posts') { // 특정 게시글 조회
+          const post = posts.find(p => p._id === id);
+          if (post) {
+            return res.status(200).json(post);
+          } else {
+            return res.status(404).json({ message: 'Post not found' });
+          }
+        } else { // 전체 게시글 목록 조회
+          return res.status(200).json(posts);
+        }
       }
     } catch (error) {
       console.error('Error fetching posts:', error);
