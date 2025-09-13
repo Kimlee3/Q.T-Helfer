@@ -11,10 +11,10 @@
     }
   ],
   "functions": {
-    "api/daily-passage.cjs": {
+    "api/daily-passage.js": {
       "maxDuration": 30
     },
-    "api/posts.cjs": {
+    "api/posts.js": {
       "maxDuration": 10
     }
   }
