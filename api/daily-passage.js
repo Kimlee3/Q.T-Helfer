@@ -19,12 +19,10 @@ export default async function handler(req, res) {
     
     // HTML에서 오늘의 말씀 정보 추출
     const referenceMatch = html.match(/묵상\s+([^<]+?)(?:\s*\|)/);
-    let reference = referenceMatch ? referenceMatch[1].trim() : '오늘의 말씀';
+    let reference = '오늘의 말씀';
     
-    // 더 정확한 참조 추출 시도
-    const betterRefMatch = html.match(/묵상\s+([^<]+?)(?:\s*\|)/);
-    if (betterRefMatch) {
-      const refText = betterRefMatch[1].trim();
+    if (referenceMatch) {
+      const refText = referenceMatch[1].trim();
       // "이사야 66장 15 - 24" 형태로 정리
       if (refText.includes('이사야') && refText.includes('66장')) {
         reference = '이사야 66:15-24';
@@ -39,13 +37,19 @@ export default async function handler(req, res) {
     
     if (tableMatch) {
       const tableContent = tableMatch[1];
-      // 테이블 셀에서 성경 본문 추출
-      const cellMatches = tableContent.match(/<td[^>]*>([^<]+)<\/td>/g);
-      if (cellMatches) {
-        const verses = cellMatches
-          .map(match => match.replace(/<[^>]*>/g, '').trim())
-          .filter(text => text.length > 0 && !text.match(/^\d+$/)); // 숫자만 있는 행 제외
-        
+      // 테이블 행에서 성경 본문 추출
+      const rowMatches = tableContent.match(/<tr[^>]*>([\s\S]*?)<\/tr>/g);
+      if (rowMatches) {
+        const verses = [];
+        rowMatches.forEach(row => {
+          // 각 행에서 절 번호와 본문 추출
+          const verseMatch = row.match(/<td[^>]*>(\d+)<\/td>\s*<td[^>]*>([^<]+)<\/td>/);
+          if (verseMatch) {
+            const verseNum = verseMatch[1];
+            const verseText = verseMatch[2].trim();
+            verses.push(`${verseNum}절 ${verseText}`);
+          }
+        });
         scriptureText = verses.join('\n');
       }
     }

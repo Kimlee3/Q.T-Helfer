@@ -27,6 +27,10 @@ const connectDB = async () => {
     return;
   }
   try {
+    if (!process.env.MONGODB_URI) {
+      console.log('MONGODB_URI not found, using memory storage');
+      return;
+    }
     await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
