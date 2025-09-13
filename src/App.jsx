@@ -5,6 +5,8 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import MainLayout from './components/MainLayout.jsx';
 import BoardList from './components/BoardList.jsx';
 import BoardWrite from './components/BoardWrite.jsx';
+import BoardDetail from './components/BoardDetail.jsx';
+import BoardEdit from './components/BoardEdit.jsx';
 
 // Import API functions
 import { fetchBibleVerses, fetchDailyDevotional } from './api.js';
@@ -160,10 +162,10 @@ function App() {
             handleSaveClick={handleSaveClick} handleCopyClick={handleCopyClick} handleShareClick={handleShareClick}
           />
         } />
-        {/* Board Routes - To be implemented */}
         <Route path="/board" element={<BoardList />} />
         <Route path="/board/write" element={<BoardWrite />} />
-        <Route path="/board/:id" element={<div>게시글 상세 (구현 예정)</div>} />
+        <Route path="/board/:id" element={<BoardDetail />} />
+        <Route path="/board/edit/:id" element={<BoardEdit />} />
       </Routes>
 
       {/* Dark mode button - remains here as it affects the body */}
