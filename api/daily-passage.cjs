@@ -1,119 +1,84 @@
+const puppeteer = require('puppeteer');
+
 export default async function handler(req, res) {
+  let browser = null;
   try {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
     res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=3600');
 
-    // bible.asher.design에서 실제 오늘의 말씀 가져오기
-    const response = await fetch('https://bible.asher.design/quiettime.php', {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
+    // Puppeteer launch options for Vercel/serverless environments
+    browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu'
+      ]
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const page = await browser.newPage();
+    await page.goto('https://bible.asher.design/quiettime.php', {
+      waitUntil: 'domcontentloaded',
+    });
 
-    const html = await response.text();
-    
-    // HTML에서 오늘의 말씀 정보 추출
-    let reference = '오늘의 말씀';
-    
-    // 여러 패턴으로 참조 추출 시도
-    const patterns = [
-      /묵상\s+([^<]+?)(?:\s*\|)/,
-      /09월\s+\d+일\s+묵상\s+([^<]+?)(?:\s*\|)/,
-      /묵상\s+([^<]+?)(?:\s*\|)/,
-      /이사야\s+(\d+)장\s+(\d+)\s*-\s*(\d+)/
-    ];
-    
-    for (const pattern of patterns) {
-      const match = html.match(pattern);
-      if (match) {
-        const refText = match[1] ? match[1].trim() : '';
-        if (refText.includes('이사야') && refText.includes('66장')) {
-          reference = '이사야 66:15-24';
-          break;
-        } else if (refText) {
-          reference = refText;
-          break;
-        }
+    const data = await page.evaluate(() => {
+      let reference = '오늘의 말씀';
+      let scriptureText = '';
+
+      // Extract reference text
+      const bodyText = document.body.innerText;
+      const refMatch = bodyText.match(/(\d+월\s+\d+일\s+묵상\s+[^\n]+)/);
+      if (refMatch && refMatch[1]) {
+        reference = refMatch[1].trim();
       }
-    }
-    
-    // 하드코딩으로 오늘 날짜에 맞는 참조 설정 (임시)
-    const today = new Date();
-    const month = today.getMonth() + 1;
-    const day = today.getDate();
-    
-    if (month === 9 && day === 13) {
-      reference = '이사야 66:15-24';
-    }
-    
-    // 성경 본문 추출 (테이블에서)
-    const tableMatch = html.match(/<table[^>]*>([\s\S]*?)<\/table>/);
-    let scriptureText = '';
-    
-    if (tableMatch) {
-      const tableContent = tableMatch[1];
-      // 테이블 행에서 성경 본문 추출
-      const rowMatches = tableContent.match(/<tr[^>]*>([\s\S]*?)<\/tr>/g);
-      if (rowMatches) {
+
+      // Extract scripture text from the table
+      const table = document.querySelector('table');
+      if (table) {
         const verses = [];
-        rowMatches.forEach(row => {
-          // 각 행에서 절 번호와 본문 추출
-          const verseMatch = row.match(/<td[^>]*>(\d+)<\/td>\s*<td[^>]*>([^<]+)<\/td>/);
-          if (verseMatch) {
-            const verseNum = verseMatch[1];
-            const verseText = verseMatch[2].trim();
+        const rows = table.querySelectorAll('tr');
+        rows.forEach((row, index) => {
+          // Skip the first row which contains the book name
+          if (index === 0) return; 
+          
+          const cells = row.querySelectorAll('td');
+          // Ensure it's a verse row (number in first cell)
+          if (cells.length === 2 && cells[0].innerText.trim().length < 5 && !isNaN(parseInt(cells[0].innerText, 10))) {
+            const verseNum = cells[0].innerText.trim();
+            const verseText = cells[1].innerText.trim();
             verses.push(`${verseNum}절 ${verseText}`);
           }
         });
         scriptureText = verses.join('\n');
       }
-    }
+      
+      return { reference, text: scriptureText };
+    });
 
-    // 추출 실패 시 기본값 사용
-    if (!scriptureText) {
-      const fallbackVerses = [
-        { reference: "요한복음 3:16", text: "하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 그를 믿는 자마다 멸망하지 않고 영생을 얻게 하려 하심이라" },
-        { reference: "로마서 8:28", text: "우리가 알거니와 하나님을 사랑하는 자 곧 그의 뜻대로 부르심을 입은 자들에게는 모든 것이 합력하여 선을 이루느니라" },
-        { reference: "빌립보서 4:13", text: "내게 능력 주시는 자 안에서 내가 모든 것을 할 수 있느니라" }
-      ];
-      
-      const today = new Date();
-      const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
-      const selectedVerse = fallbackVerses[dayOfYear % fallbackVerses.length];
-      
-      return res.status(200).json({
-        reference: selectedVerse.reference,
-        text: `📖 ${selectedVerse.reference}\n${selectedVerse.text}`
-      });
+    if (!data.text) {
+      throw new Error('Could not extract scripture text. The page structure might have changed.');
     }
 
     res.status(200).json({
-      reference: reference,
-      text: `📖 ${reference}\n${scriptureText}`
+      reference: data.reference,
+      text: `📆 ${data.reference}\n${data.text}`
     });
 
   } catch (error) {
-    console.error('Daily passage error:', error);
-    
-    // 에러 발생 시 기본값 사용
-    const fallbackVerses = [
-      { reference: "요한복음 3:16", text: "하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 그를 믿는 자마다 멸망하지 않고 영생을 얻게 하려 하심이라" },
-      { reference: "로마서 8:28", text: "우리가 알거니와 하나님을 사랑하는 자 곧 그의 뜻대로 부르심을 입은 자들에게는 모든 것이 합력하여 선을 이루느니라" },
-      { reference: "빌립보서 4:13", text: "내게 능력 주시는 자 안에서 내가 모든 것을 할 수 있느니라" }
-    ];
-    
-    const today = new Date();
-    const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
-    const selectedVerse = fallbackVerses[dayOfYear % fallbackVerses.length];
-    
-    res.status(200).json({
-      reference: selectedVerse.reference,
-      text: `📖 ${selectedVerse.reference}\n${selectedVerse.text}`
+    console.error('Error scraping daily passage with Puppeteer:', error);
+    res.status(500).json({
+      message: '오늘의 말씀을 크롤링하는 중 오류가 발생했습니다.',
+      details: error.message
     });
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
   }
 }

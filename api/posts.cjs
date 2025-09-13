@@ -38,7 +38,8 @@ const connectDB = async () => {
     console.log('MongoDB connected successfully.');
   } catch (error) {
     console.error('MongoDB connection error:', error);
-    // 연결 실패해도 프로세스를 종료하지 않고 계속 진행
+    // 연결 실패 시 에러를 던져서 핸들러에서 잡도록 함
+    throw new Error(`MongoDB Connection Error: ${error.message}`);
   }
 };
 
@@ -62,7 +63,12 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  await connectDB(); // 요청 처리 전에 DB 연결
+  try {
+    await connectDB(); // 요청 처리 전에 DB 연결
+  } catch (error) {
+    console.error('Database connection failed:', error);
+    return res.status(500).json({ message: 'Database connection failed', details: error.message });
+  }
 
   if (req.method === 'GET') {
     try {
