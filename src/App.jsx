@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import MainLayout from './components/MainLayout.jsx';
+import BoardList from './components/BoardList.jsx';
+import BoardWrite from './components/BoardWrite.jsx';
+import BoardDetail from './components/BoardDetail.jsx';
+import BoardEdit from './components/BoardEdit.jsx';
 import { fetchBibleVerses, fetchDailyDevotional } from './api.js';
 import './style.css';
 
@@ -17,6 +22,7 @@ function App() {
   const [isSaved, setIsSaved] = useState(false);
   const [savedContent, setSavedContent] = useState('');
   const [showSaved, setShowSaved] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
   const handleFetchClick = async () => {
     if (!bibleRef) {
@@ -53,6 +59,15 @@ function App() {
   useEffect(() => {
     handleDailyDevotionalClick();
   }, []);
+
+  // Dark mode toggling using a body class
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+  }, [darkMode]);
 
   const handleSaveClick = () => {
     const content = `
@@ -102,24 +117,40 @@ ${finalPrayer}
 
 
   return (
-    <MainLayout
-      bibleRef={bibleRef} setBibleRef={setBibleRef}
-      bibleText={bibleText} setBibleText={setBibleText}
-      prayerText={prayerText} setPrayerText={setPrayerText}
-      summaryText={summaryText} setSummaryText={setSummaryText}
-      capturedText={capturedText} setCapturedText={setCapturedText}
-      meditationText={meditationText} setMeditationText={setMeditationText}
-      characterText={characterText} setCharacterText={setCharacterText}
-      actionText={actionText} setActionText={setActionText}
-      finalPrayer={finalPrayer} setFinalPrayer={setFinalPrayer}
-      isLoading={isLoading} isSaved={isSaved}
-      savedContent={savedContent} showSaved={showSaved}
-      handleFetchClick={handleFetchClick}
-      handleDailyDevotionalClick={handleDailyDevotionalClick}
-      handleSaveClick={handleSaveClick}
-      handleCopyClick={() => handleCopyClick(savedContent)}
-      handleShareClick={handleShareClick}
-    />
+    <>
+      <button id="darkmode-toggle" onClick={() => setDarkMode(v => !v)} aria-label="다크 모드 토글">
+        <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+      </button>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <MainLayout
+              bibleRef={bibleRef} setBibleRef={setBibleRef}
+              bibleText={bibleText} setBibleText={setBibleText}
+              prayerText={prayerText} setPrayerText={setPrayerText}
+              summaryText={summaryText} setSummaryText={setSummaryText}
+              capturedText={capturedText} setCapturedText={setCapturedText}
+              meditationText={meditationText} setMeditationText={setMeditationText}
+              characterText={characterText} setCharacterText={setCharacterText}
+              actionText={actionText} setActionText={setActionText}
+              finalPrayer={finalPrayer} setFinalPrayer={setFinalPrayer}
+              isLoading={isLoading} isSaved={isSaved}
+              savedContent={savedContent} showSaved={showSaved}
+              handleFetchClick={handleFetchClick}
+              handleDailyDevotionalClick={handleDailyDevotionalClick}
+              handleSaveClick={handleSaveClick}
+              handleCopyClick={() => handleCopyClick(savedContent)}
+              handleShareClick={handleShareClick}
+            />
+          }
+        />
+        <Route path="/board" element={<BoardList />} />
+        <Route path="/board/write" element={<BoardWrite />} />
+        <Route path="/board/:id" element={<BoardDetail />} />
+        <Route path="/board/edit/:id" element={<BoardEdit />} />
+      </Routes>
+    </>
   );
 }
 
