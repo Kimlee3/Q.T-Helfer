@@ -40,14 +40,19 @@ function BoardList() {
           <p>게시글이 없습니다. 첫 글을 작성해 보세요!</p>
         ) : (
           <ul style={{ listStyle: 'none', padding: 0 }}>
-            {Array.isArray(posts) && posts.map(post => (
-              <li key={post.id} style={{ borderBottom: '1px solid #eee', padding: '10px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Link to={`/board/${post.id}`} style={{ textDecoration: 'none', color: '#333', fontWeight: 'bold' }}>
-                  {post.title}
-                </Link>
-                <span style={{ fontSize: '0.8em', color: '#777' }}>{post.author} | {new Date(post.createdAt).toLocaleDateString()}</span>
-              </li>
-            ))}
+            {Array.isArray(posts) && posts.map(post => {
+              const postId = post?._id || post?.id;
+              if (!postId) return null;
+
+              return (
+                <li key={postId} style={{ borderBottom: '1px solid #eee', padding: '10px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Link to={`/board/${postId}`} style={{ textDecoration: 'none', color: '#333', fontWeight: 'bold' }}>
+                    {post.title}
+                  </Link>
+                  <span style={{ fontSize: '0.8em', color: '#777' }}>{post.author} | {new Date(post.createdAt).toLocaleDateString()}</span>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
