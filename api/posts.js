@@ -70,16 +70,19 @@ export default async function handler(req, res) {
     return res.status(500).json({ message: 'Database connection failed', details: error.message });
   }
 
+  const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  const pathParts = url.pathname.split('/').filter(Boolean);
+  const pathIdCandidate = pathParts.length > 2 ? pathParts[pathParts.length - 1] : null;
+  const queryId = url.searchParams.get('id');
+  const requestedId = queryId || (pathIdCandidate && pathIdCandidate !== 'posts' ? pathIdCandidate : null);
+
   if (req.method === 'GET') {
     try {
-      const urlParts = req.url.split('/');
-      const id = urlParts[urlParts.length - 1];
-
       // MongoDB 연결 상태 확인
       if (mongoose.connections[0].readyState === 1) {
         // MongoDB 연결된 경우
-        if (mongoose.Types.ObjectId.isValid(id)) { // ID가 유효한 ObjectId인 경우, 특정 게시글 조회
-          const post = await Post.findById(id);
+        if (requestedId && mongoose.Types.ObjectId.isValid(requestedId)) { // ID가 유효한 ObjectId인 경우, 특정 게시글 조회
+          const post = await Post.findById(requestedId);
           if (post) {
             return res.status(200).json(post);
           } else {
@@ -91,8 +94,8 @@ export default async function handler(req, res) {
         }
       } else {
         // MongoDB 연결되지 않은 경우 메모리 저장소 사용
-        if (id && id !== 'posts') { // 특정 게시글 조회
-          const post = posts.find(p => p._id === id);
+        if (requestedId) { // 특정 게시글 조회
+          const post = posts.find(p => p._id === requestedId);
           if (post) {
             return res.status(200).json(post);
           } else {
@@ -136,10 +139,9 @@ export default async function handler(req, res) {
       return res.status(500).json({ message: 'Internal server error' });
     }
   } else if (req.method === 'PUT') { // PUT 요청 처리 (게시글 수정)
-    const urlParts = req.url.split('/');
-    const id = urlParts[urlParts.length - 1];
+    const id = requestedId;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: 'Invalid Post ID' });
     }
 
@@ -149,12 +151,12 @@ export default async function handler(req, res) {
     });
     req.on('end', async () => {
       try {
-        const { title, content, author } = JSON.parse(body);
-        const updatedPost = await Post.findByIdAndUpdate(
-          id,
-          { title, content, author, createdAt: new Date().toISOString() }, // createdAt도 업데이트
-          { new: true, runValidators: true }
-        );
+          const { title, content, author } = JSON.parse(body);
+          const updatedPost = await Post.findByIdAndUpdate(
+            id,
+            { title, content, author, createdAt: new Date().toISOString() }, // createdAt도 업데이트
+            { new: true, runValidators: true }
+          );
         if (updatedPost) {
           return res.status(200).json(updatedPost);
         } else {
@@ -166,10 +168,9 @@ export default async function handler(req, res) {
       }
     });
   } else if (req.method === 'DELETE') { // DELETE 요청 처리 (게시글 삭제)
-    const urlParts = req.url.split('/');
-    const id = urlParts[urlParts.length - 1];
+    const id = requestedId;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: 'Invalid Post ID' });
     }
 

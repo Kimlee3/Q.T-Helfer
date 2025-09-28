@@ -13,7 +13,7 @@ function BoardEdit() {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const response = await fetch(`/api/posts/${id}`);
+        const response = await fetch(`/api/posts?id=${encodeURIComponent(id)}`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -35,7 +35,7 @@ function BoardEdit() {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await fetch(`/api/posts/${id}`, {
+      const response = await fetch(`/api/posts?id=${encodeURIComponent(id)}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

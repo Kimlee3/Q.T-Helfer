@@ -8,8 +8,6 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "dev:desktop": "concurrently -k \"npm:dev\" \"npm:electron\"",
-    "electron": "electron electron/main.mjs",
     "test": "vitest"
   },
   "repository": {
@@ -24,8 +22,6 @@
   },
   "homepage": "https://github.com/Kimlee3/Q.T-Helfer#readme",
   "devDependencies": {
-    "concurrently": "^9.2.1",
-    "electron": "^30.0.8",
     "vite": "^5.3.3",
     "vitest": "^1.6.0"
   },

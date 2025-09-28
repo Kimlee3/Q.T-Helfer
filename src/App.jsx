@@ -13,6 +13,8 @@ const STORAGE_KEYS = {
   qtState: 'qt-helper:form-state'
 };
 
+const SUNDAY_MESSAGE = '주일은 묵상 본문이 없습니다.\n주일예배 설교말씀을 묵상해 주세요.';
+
 function App() {
   const [bibleRef, setBibleRef] = useState('');
   const [bibleText, setBibleText] = useState('');
@@ -27,6 +29,7 @@ function App() {
   const [savedContent, setSavedContent] = useState('');
   const [showSaved, setShowSaved] = useState(false);
   const [saveBannerVisible, setSaveBannerVisible] = useState(false);
+  const isSunday = useMemo(() => new Date().getDay() === 0, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -156,6 +159,13 @@ function App() {
   }, [bibleRef]);
 
   const handleDailyDevotionalClick = useCallback(async () => {
+    if (isSunday) {
+      setBibleRef('');
+      setBibleText(SUNDAY_MESSAGE);
+      setShowSaved(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const data = await fetchDailyDevotional();
@@ -170,7 +180,7 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isSunday]);
 
   const handleSaveClick = useCallback(() => {
     if (!assembledContent) {
@@ -226,6 +236,8 @@ function App() {
     }
   }, [assembledContent, savedContent]);
 
+  const effectiveBibleText = isSunday && !bibleText ? SUNDAY_MESSAGE : bibleText;
+
   return (
     <BrowserRouter>
       <div className="app-shell">
@@ -252,7 +264,7 @@ function App() {
                 <MainLayout
                   bibleRef={bibleRef}
                   setBibleRef={setBibleRef}
-                  bibleText={bibleText}
+                  bibleText={effectiveBibleText}
                   setBibleText={setBibleText}
                   prayerText={prayerText}
                   setPrayerText={setPrayerText}
