@@ -76,10 +76,13 @@ async function getBody(req) {
 }
 
 function getIdFromUrl(req) {
-  const cleanUrl = String(req.url || '').split('?')[0];
-  const parts = cleanUrl.split('/').filter(Boolean);
+  const url = new URL(req.url || '/api/posts', 'https://qt-helper.local');
+  const queryId = url.searchParams.get('id');
+  if (queryId) return queryId;
+
+  const parts = url.pathname.split('/').filter(Boolean);
   const last = parts[parts.length - 1];
-  return last && last !== 'posts' ? decodeURIComponent(last) : null;
+  return last && last !== 'posts' && last !== 'posts.js' ? decodeURIComponent(last) : null;
 }
 
 function toApiPost(row) {
