@@ -7,11 +7,17 @@ function SavedContent({ showSaved, content, handleCopyClick }) {
 
   return (
     <div className="card saved-content">
-      <h3><i className="fas fa-history"></i> 저장된 내용</h3>
+      <div className="section-heading">
+        <span className="soft-icon"><i className="fas fa-feather"></i></span>
+        <div>
+          <p className="eyebrow">Archive Preview</p>
+          <h3>저장된 묵상</h3>
+        </div>
+      </div>
       <pre>{content}</pre>
       <div className="saved-actions">
         <button onClick={handleCopyClick} className="secondary-btn">
-          <i className="fas fa-copy"></i> 복사하기
+          복사하기
         </button>
       </div>
     </div>

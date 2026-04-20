@@ -4,10 +4,10 @@ function Actions({ handleSaveClick, handleShareClick }) {
   return (
     <div className="action-buttons">
       <button onClick={handleSaveClick} className="primary-btn">
-        <i className="fas fa-save"></i> 저장하기
+        오늘의 묵상 저장
       </button>
       <button onClick={handleShareClick} className="secondary-btn">
-        <i className="fas fa-share-alt"></i> 공유하기
+        나눔으로 공유
       </button>
     </div>
   );

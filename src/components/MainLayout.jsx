@@ -16,8 +16,18 @@ function MainLayout({
   handleFetchClick, handleDailyDevotionalClick, handleSaveClick, handleCopyClick, handleShareClick
 }) {
   return (
-    <div className="container">
+    <div className="container sanctuary-shell">
       <Header />
+      <section className="hero-panel" aria-label="큐티 도우미 소개">
+        <div>
+          <p className="eyebrow">Quiet Time Companion</p>
+          <h2>말씀을 읽고, 붙잡고, 오늘의 언어로 남기는 시간</h2>
+        </div>
+        <p>
+          본문 검색, 묵상 기록, 적용과 기도까지 한 흐름으로 정리합니다.
+          도구처럼 바쁘게 굴러가기보다, 한 장의 좋은 저널처럼 숨 쉴 공간을 만들었습니다.
+        </p>
+      </section>
       <Search
         bibleRef={bibleRef} setBibleRef={setBibleRef}
         bibleText={bibleText} isLoading={isLoading}

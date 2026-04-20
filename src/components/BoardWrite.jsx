@@ -38,46 +38,54 @@ function BoardWrite() {
   };
 
   return (
-    <div className="container card">
-      <h2>새 게시글 작성</h2>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="title" style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>제목</label>
+    <div className="container board-shell">
+      <div className="board-hero">
+        <div>
+          <p className="eyebrow">Write</p>
+          <h2>새 나눔 작성</h2>
+          <p>오늘의 묵상을 한 편의 짧은 기록처럼 남겨보세요.</p>
+        </div>
+      </div>
+      <form onSubmit={handleSubmit} className="journal-form">
+        <div className="form-field">
+          <label htmlFor="title">제목</label>
           <input
             type="text"
             id="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
           />
         </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="author" style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>작성자</label>
+        <div className="form-field">
+          <label htmlFor="author">작성자</label>
           <input
             type="text"
             id="author"
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
           />
         </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="content" style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>내용</label>
+        <div className="form-field">
+          <label htmlFor="content">내용</label>
           <textarea
             id="content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
             required
             rows="10"
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd', resize: 'vertical' }}
           ></textarea>
         </div>
-        <button type="submit" disabled={loading} className="primary-btn">
-          {loading ? '작성 중...' : '게시글 작성'}
-        </button>
-        {error && <p style={{ color: 'red', marginTop: '10px' }}>오류: {error}</p>}
+        <div className="form-actions">
+          <button type="submit" disabled={loading} className="primary-btn">
+            {loading ? '작성 중...' : '나눔 저장'}
+          </button>
+          <button type="button" onClick={() => navigate('/board')} className="secondary-btn">
+            목록으로
+          </button>
+        </div>
+        {error && <p className="error-note">오류: {error}</p>}
       </form>
     </div>
   );

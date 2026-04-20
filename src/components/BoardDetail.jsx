@@ -44,29 +44,32 @@ function BoardDetail() {
     }
   };
 
-  if (loading) return <div>게시글을 불러오는 중...</div>;
-  if (error) return <div>오류: {error}</div>;
-  if (!post) return <div>게시글을 찾을 수 없습니다.</div>;
+  if (loading) return <div className="container board-shell">게시글을 불러오는 중...</div>;
+  if (error) return <div className="container board-shell">오류: {error}</div>;
+  if (!post) return <div className="container board-shell">게시글을 찾을 수 없습니다.</div>;
 
   return (
-    <div className="container card">
-      <h2>{post.title}</h2>
-      <p style={{ color: '#555', marginBottom: '20px' }}>
-        <strong>작성자:</strong> {post.author} | <strong>작성일:</strong> {new Date(post.createdAt).toLocaleDateString()}
-      </p>
-      <div style={{ whiteSpace: 'pre-wrap', marginBottom: '30px', lineHeight: '1.6' }}>
+    <div className="container board-shell">
+      <article className="post-detail">
+        <p className="eyebrow">Shared Journal</p>
+        <h2>{post.title}</h2>
+        <p className="post-meta">
+          {post.author} · {new Date(post.createdAt).toLocaleDateString()}
+        </p>
+      <div className="post-body">
         {post.content}
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+      </article>
+      <div className="detail-actions">
         <Link to="/board" className="secondary-btn">
-          <i className="fas fa-list"></i> 목록으로
+          목록으로
         </Link>
         <div>
-          <Link to={`/board/edit/${id}`} className="primary-btn" style={{ marginRight: '10px' }}>
-            <i className="fas fa-edit"></i> 수정
+          <Link to={`/board/edit/${id}`} className="primary-btn">
+            수정
           </Link>
           <button onClick={handleDelete} className="danger-btn">
-            <i className="fas fa-trash"></i> 삭제
+            삭제
           </button>
         </div>
       </div>

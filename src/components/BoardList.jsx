@@ -26,29 +26,36 @@ function BoardList() {
     fetchPosts();
   }, []);
 
-  if (loading) return <div>게시글을 불러오는 중...</div>;
-  if (error) return <div>게시글을 불러오는데 실패했습니다: {error.message}</div>;
+  if (loading) return <div className="container board-shell">게시글을 불러오는 중...</div>;
+  if (error) return <div className="container board-shell">게시글을 불러오는데 실패했습니다: {error.message}</div>;
 
   return (
     <ErrorBoundary>
-      <div className="container card">
-        <h2>게시판 목록</h2>
-        <Link to="/board/write" className="primary-btn" style={{ marginBottom: '20px', display: 'inline-block' }}>
-          <i className="fas fa-pencil-alt"></i> 새 글 작성
-        </Link>
+      <div className="container board-shell">
+        <div className="board-hero">
+          <div>
+            <p className="eyebrow">Community Journal</p>
+            <h2>나눔 게시판</h2>
+            <p>묵상에서 받은 마음을 조용히 남기고 다시 읽는 공간입니다.</p>
+          </div>
+          <Link to="/board/write" className="primary-btn">
+            새 글 작성
+          </Link>
+        </div>
+        <Link to="/" className="ghost-btn board-back">묵상실로 돌아가기</Link>
         {Array.isArray(posts) && posts.length === 0 ? (
-          <p>게시글이 없습니다. 첫 글을 작성해 보세요!</p>
+          <div className="empty-state">아직 게시글이 없습니다. 첫 나눔을 남겨보세요.</div>
         ) : (
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+          <ul className="post-list">
             {Array.isArray(posts) && posts.map(post => {
               const pid = post._id || post.id;
               const created = post.createdAt ? new Date(post.createdAt) : new Date();
               return (
-                <li key={pid} style={{ borderBottom: '1px solid #eee', padding: '10px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Link to={`/board/${pid}`} style={{ textDecoration: 'none', color: '#333', fontWeight: 'bold' }}>
+                <li key={pid} className="post-list-item">
+                  <Link to={`/board/${pid}`}>
                     {post.title}
                   </Link>
-                  <span style={{ fontSize: '0.8em', color: '#777' }}>{post.author} | {created.toLocaleDateString()}</span>
+                  <span>{post.author} · {created.toLocaleDateString()}</span>
                 </li>
               );
             })}

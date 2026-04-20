@@ -54,50 +54,58 @@ function BoardEdit() {
     }
   };
 
-  if (loading) return <div>게시글 정보를 불러오는 중...</div>;
-  if (error) return <div>오류: {error}</div>;
+  if (loading) return <div className="container board-shell">게시글 정보를 불러오는 중...</div>;
+  if (error) return <div className="container board-shell">오류: {error}</div>;
 
   return (
-    <div className="container card">
-      <h2>게시글 수정</h2>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="title" style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>제목</label>
+    <div className="container board-shell">
+      <div className="board-hero">
+        <div>
+          <p className="eyebrow">Revise</p>
+          <h2>나눔 수정</h2>
+          <p>처음 남긴 마음을 다시 다듬어 저장합니다.</p>
+        </div>
+      </div>
+      <form onSubmit={handleSubmit} className="journal-form">
+        <div className="form-field">
+          <label htmlFor="title">제목</label>
           <input
             type="text"
             id="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
           />
         </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="author" style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>작성자</label>
+        <div className="form-field">
+          <label htmlFor="author">작성자</label>
           <input
             type="text"
             id="author"
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
           />
         </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="content" style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>내용</label>
+        <div className="form-field">
+          <label htmlFor="content">내용</label>
           <textarea
             id="content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
             required
             rows="10"
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd', resize: 'vertical' }}
           ></textarea>
         </div>
-        <button type="submit" disabled={loading} className="primary-btn">
-          {loading ? '수정 중...' : '게시글 수정'}
-        </button>
-        {error && <p style={{ color: 'red', marginTop: '10px' }}>오류: {error}</p>}
+        <div className="form-actions">
+          <button type="submit" disabled={loading} className="primary-btn">
+            {loading ? '수정 중...' : '수정 저장'}
+          </button>
+          <button type="button" onClick={() => navigate(`/board/${id}`)} className="secondary-btn">
+            돌아가기
+          </button>
+        </div>
+        {error && <p className="error-note">오류: {error}</p>}
       </form>
     </div>
   );
