@@ -8,6 +8,31 @@ import BoardEdit from './components/BoardEdit.jsx';
 import { fetchBibleVerses, fetchDailyDevotional } from './api.js';
 import './style.css';
 
+const THEME_STORAGE_KEY = 'qt_helper_theme_preference';
+const THEME_OPTIONS = ['auto', 'light', 'dark'];
+
+function isNightTime(date = new Date()) {
+  const hour = date.getHours();
+  return hour >= 19 || hour < 6;
+}
+
+function getStoredThemePreference() {
+  if (typeof window === 'undefined') return 'auto';
+
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    return THEME_OPTIONS.includes(stored) ? stored : 'auto';
+  } catch {
+    return 'auto';
+  }
+}
+
+function resolveDarkMode(themePreference) {
+  if (themePreference === 'dark') return true;
+  if (themePreference === 'light') return false;
+  return isNightTime();
+}
+
 function App() {
   const [bibleRef, setBibleRef] = useState('');
   const [bibleText, setBibleText] = useState('');
@@ -22,7 +47,8 @@ function App() {
   const [isSaved, setIsSaved] = useState(false);
   const [savedContent, setSavedContent] = useState('');
   const [showSaved, setShowSaved] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const [themePreference, setThemePreference] = useState(() => getStoredThemePreference());
+  const [darkMode, setDarkMode] = useState(() => resolveDarkMode(getStoredThemePreference()));
 
   const handleFetchClick = async () => {
     if (!bibleRef) {
@@ -60,14 +86,40 @@ function App() {
     handleDailyDevotionalClick();
   }, []);
 
-  // Dark mode toggling using a body class
+  useEffect(() => {
+    const nextDarkMode = resolveDarkMode(themePreference);
+    setDarkMode(nextDarkMode);
+
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, themePreference);
+    } catch {
+      // Keep the app usable in browsers that block localStorage.
+    }
+
+    if (themePreference !== 'auto') return undefined;
+
+    const timer = window.setInterval(() => {
+      setDarkMode(resolveDarkMode('auto'));
+    }, 60 * 1000);
+
+    return () => window.clearInterval(timer);
+  }, [themePreference]);
+
   useEffect(() => {
     if (darkMode) {
       document.body.classList.add('dark-mode');
     } else {
       document.body.classList.remove('dark-mode');
     }
-  }, [darkMode]);
+    document.body.dataset.themePreference = themePreference;
+  }, [darkMode, themePreference]);
+
+  const handleThemeToggle = () => {
+    setThemePreference((current) => {
+      const nextIndex = (THEME_OPTIONS.indexOf(current) + 1) % THEME_OPTIONS.length;
+      return THEME_OPTIONS[nextIndex];
+    });
+  };
 
   const handleSaveClick = () => {
     const content = `
@@ -118,8 +170,16 @@ ${finalPrayer}
 
   return (
     <>
-      <button id="darkmode-toggle" onClick={() => setDarkMode(v => !v)} aria-label="다크 모드 토글">
-        <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+      <button
+        id="darkmode-toggle"
+        onClick={handleThemeToggle}
+        aria-label="화면 밝기 모드 변경"
+        title="자동, 낮, 밤 모드 전환"
+      >
+        <i className={`fas ${themePreference === 'auto' ? 'fa-clock' : darkMode ? 'fa-moon' : 'fa-sun'}`}></i>
+        <span>
+          {themePreference === 'auto' ? '자동' : darkMode ? '밤' : '낮'}
+        </span>
       </button>
       <Routes>
         <Route

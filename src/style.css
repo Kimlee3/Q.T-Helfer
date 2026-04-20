@@ -476,18 +476,41 @@ body.dark-mode .action-buttons {
 
 #darkmode-toggle {
   position: fixed;
-  right: 22px;
-  bottom: 22px;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
   z-index: 1000;
-  display: grid;
-  width: 52px;
+  display: inline-flex;
+  width: auto;
   height: 52px;
-  place-items: center;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
   border: 0;
   border-radius: 999px;
   color: var(--on-primary);
   background: linear-gradient(135deg, var(--primary), var(--primary-deep));
   box-shadow: var(--shadow-float);
+  font-family: "Inter", sans-serif;
+  font-size: 0.88rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+#darkmode-toggle span {
+  min-width: 28px;
+}
+
+body[data-theme-preference="auto"] #darkmode-toggle {
+  color: var(--primary-deep);
+  background: rgba(255, 255, 255, 0.72);
+  outline: 1px solid var(--ghost-border);
+  backdrop-filter: blur(12px);
+}
+
+body.dark-mode[data-theme-preference="auto"] #darkmode-toggle {
+  color: var(--primary);
+  background: rgba(13, 27, 19, 0.72);
 }
 
 .board-shell {
@@ -629,6 +652,11 @@ body.dark-mode .board-hero {
     width: min(100% - 22px, 1120px);
   }
 
+  .app-header {
+    top: 10px;
+    margin-bottom: 18px;
+  }
+
   .header-content,
   .hero-panel,
   .board-hero {
@@ -641,6 +669,10 @@ body.dark-mode .board-hero {
 
   .top-nav {
     justify-content: flex-start;
+  }
+
+  .top-nav .ghost-btn {
+    flex: 1 1 132px;
   }
 
   .search-controls,
@@ -662,6 +694,7 @@ body.dark-mode .board-hero {
 
   .action-buttons {
     border-radius: var(--radius-lg);
+    bottom: calc(14px + env(safe-area-inset-bottom));
   }
 
   .primary-btn,
@@ -678,11 +711,30 @@ body.dark-mode .board-hero {
 
 @media (max-width: 520px) {
   body {
-    font-size: 15px;
+    font-size: 15.5px;
   }
 
   .sanctuary-shell {
-    padding-top: 16px;
+    padding-top: 12px;
+    padding-bottom: 112px;
+  }
+
+  .container {
+    width: min(100% - 18px, 1120px);
+  }
+
+  .app-header {
+    position: relative;
+    top: 0;
+  }
+
+  .header-content {
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .subtitle {
+    font-size: 0.9rem;
   }
 
   .hero-panel,
@@ -693,11 +745,28 @@ body.dark-mode .board-hero {
   }
 
   .hero-panel {
-    padding: 28px 22px;
+    gap: 18px;
+    margin-bottom: 18px;
+    padding: 28px 22px 24px;
+  }
+
+  .hero-panel h2 {
+    font-size: clamp(2.3rem, 15vw, 3.55rem);
+  }
+
+  .hero-panel > p {
+    font-size: 0.98rem;
+    line-height: 1.7;
+  }
+
+  .card {
+    margin-bottom: 18px;
+    padding: 22px 18px;
   }
 
   .section-heading {
     gap: 12px;
+    margin-bottom: 14px;
   }
 
   .soft-icon {
@@ -706,8 +775,73 @@ body.dark-mode .board-hero {
     border-radius: 15px;
   }
 
+  .eyebrow {
+    font-size: 0.66rem;
+    letter-spacing: 0.14em;
+  }
+
+  .section-heading h3 {
+    font-size: 1.45rem;
+  }
+
+  input,
+  textarea {
+    border-radius: 16px;
+    font-size: 16px;
+  }
+
+  input {
+    min-height: 52px;
+  }
+
   textarea {
     min-height: 132px;
+    padding: 18px;
+  }
+
+  textarea.scripture-textarea {
+    min-height: 180px;
+    font-size: 1rem;
+  }
+
+  .primary-btn,
+  .secondary-btn,
+  .ghost-btn,
+  .danger-btn {
+    min-height: 50px;
+    border-radius: 15px;
+    padding: 13px 16px;
+  }
+
+  .action-buttons {
+    width: min(calc(100% - 22px), 480px);
+    margin-bottom: 0;
+    padding: 10px;
+  }
+
+  #darkmode-toggle {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: calc(86px + env(safe-area-inset-bottom));
+    height: 44px;
+    padding: 0 12px;
+    font-size: 0.8rem;
+  }
+
+  .board-shell {
+    margin-top: 12px;
+    padding: 20px 16px;
+  }
+
+  .board-hero {
+    padding: 22px 18px;
+  }
+
+  .board-hero h2,
+  .post-detail h2 {
+    font-size: clamp(2.1rem, 14vw, 3.2rem);
+  }
+
+  .post-list-item {
     padding: 18px;
   }
 }
