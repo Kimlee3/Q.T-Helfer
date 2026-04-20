@@ -1,191 +1,239 @@
-import mongoose from 'mongoose';
+import { neon } from '@neondatabase/serverless';
+import { randomUUID } from 'crypto';
 
-// 로컬 개발용 메모리 저장소
-let posts = [
+let memoryPosts = [
   {
     _id: '1',
     title: '첫 번째 게시글',
     content: '안녕하세요! 첫 번째 게시글입니다.',
     author: '관리자',
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   },
   {
-    _id: '2', 
+    _id: '2',
     title: 'QT 헬퍼 사용법',
     content: 'QT 헬퍼를 사용하여 매일 말씀을 읽어보세요.',
     author: '관리자',
-    createdAt: new Date().toISOString()
-  }
+    createdAt: new Date().toISOString(),
+  },
 ];
 
-let nextId = 3;
+let dbReady = false;
+let dbInitPromise = null;
 
-// MongoDB 연결 함수
-const connectDB = async () => {
-  if (mongoose.connections[0].readyState) {
-    // 이미 연결되어 있으면 다시 연결하지 않음
-    return;
-  }
-  try {
-    const uri = process.env.MONGODB_URI || process.env.MONGO_URI;
-    if (!uri) {
-      console.log('Mongo connection string not found, using memory storage');
-      return;
-    }
-    await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+function getDatabaseUrl() {
+  return (
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.POSTGRES_PRISMA_URL ||
+    process.env.NEON_DATABASE_URL ||
+    ''
+  );
+}
+
+function getSql() {
+  const databaseUrl = getDatabaseUrl();
+  return databaseUrl ? neon(databaseUrl) : null;
+}
+
+async function ensureSchema(sql) {
+  if (dbReady) return;
+  if (!dbInitPromise) {
+    dbInitPromise = sql`
+      create table if not exists qt_posts (
+        id text primary key,
+        title text not null,
+        content text not null,
+        author text not null,
+        created_at timestamptz not null default now(),
+        updated_at timestamptz not null default now()
+      )
+    `.then(() => {
+      dbReady = true;
     });
-    console.log('MongoDB connected successfully.');
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    // 연결 실패 시 에러를 던져서 핸들러에서 잡도록 함
-    throw new Error(`MongoDB Connection Error: ${error.message}`);
   }
-};
+  await dbInitPromise;
+}
 
-// 게시물 스키마 정의
-const PostSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  content: { type: String, required: true },
-  author: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
-});
+async function getBody(req) {
+  if (req.body && typeof req.body === 'object') return req.body;
+  if (typeof req.body === 'string') return JSON.parse(req.body || '{}');
 
-// Post 모델 생성
-const Post = mongoose.models.Post || mongoose.model('Post', PostSchema);
+  return await new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (error) {
+        reject(error);
+      }
+    });
+    req.on('error', reject);
+  });
+}
 
-export default async function handler(req, res) {
+function getIdFromUrl(req) {
+  const cleanUrl = String(req.url || '').split('?')[0];
+  const parts = cleanUrl.split('/').filter(Boolean);
+  const last = parts[parts.length - 1];
+  return last && last !== 'posts' ? decodeURIComponent(last) : null;
+}
+
+function toApiPost(row) {
+  return {
+    _id: row.id,
+    title: row.title,
+    content: row.content,
+    author: row.author,
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
+  };
+}
+
+async function withStore(callback, fallback) {
+  const sql = getSql();
+  if (!sql) return fallback();
+
+  try {
+    await ensureSchema(sql);
+    return await callback(sql);
+  } catch (error) {
+    console.error('Postgres storage failed, using memory fallback:', error);
+    return fallback(error);
+  }
+}
+
+function setCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
+export default async function handler(req, res) {
+  setCors(res);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  try {
-    await connectDB(); // 요청 처리 전에 DB 연결
-  } catch (error) {
-    console.error('Database connection failed:', error);
-    return res.status(500).json({ message: 'Database connection failed', details: error.message });
-  }
+  const id = getIdFromUrl(req);
 
   if (req.method === 'GET') {
-    try {
-      const urlParts = req.url.split('/');
-      const id = urlParts[urlParts.length - 1];
+    return withStore(
+      async (sql) => {
+        if (id) {
+          const rows = await sql`select * from qt_posts where id = ${id} limit 1`;
+          if (!rows[0]) return res.status(404).json({ message: 'Post not found' });
+          return res.status(200).json(toApiPost(rows[0]));
+        }
 
-      // MongoDB 연결 상태 확인
-      if (mongoose.connections[0].readyState === 1) {
-        // MongoDB 연결된 경우
-        if (mongoose.Types.ObjectId.isValid(id)) { // ID가 유효한 ObjectId인 경우, 특정 게시글 조회
-          const post = await Post.findById(id);
-          if (post) {
-            return res.status(200).json(post);
-          } else {
-            return res.status(404).json({ message: 'Post not found' });
-          }
-        } else { // ID가 없거나 유효하지 않은 경우, 전체 게시글 목록 조회
-          const posts = await Post.find({});
-          return res.status(200).json(posts);
+        const rows = await sql`select * from qt_posts order by created_at desc`;
+        return res.status(200).json(rows.map(toApiPost));
+      },
+      () => {
+        if (id) {
+          const post = memoryPosts.find((item) => item._id === id);
+          if (!post) return res.status(404).json({ message: 'Post not found' });
+          return res.status(200).json(post);
         }
-      } else {
-        // MongoDB 연결되지 않은 경우 메모리 저장소 사용
-        if (id && id !== 'posts') { // 특정 게시글 조회
-          const post = posts.find(p => p._id === id);
-          if (post) {
-            return res.status(200).json(post);
-          } else {
-            return res.status(404).json({ message: 'Post not found' });
-          }
-        } else { // 전체 게시글 목록 조회
-          return res.status(200).json(posts);
-        }
+        return res.status(200).json(memoryPosts);
       }
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-      return res.status(500).json({ message: 'Error fetching posts', details: error.message });
-    }
-  } else if (req.method === 'POST') {
-    try {
-      const { title, content, author } = req.body;
+    );
+  }
 
+  if (req.method === 'POST') {
+    try {
+      const { title, content, author } = await getBody(req);
       if (!title || !content || !author) {
         return res.status(400).json({ message: 'All fields are required' });
       }
 
-      if (mongoose.connections[0].readyState === 1) {
-        // MongoDB에 저장
-        const newPost = new Post({ title, content, author });
-        await newPost.save();
-        return res.status(201).json(newPost);
-      } else {
-        // 메모리 저장소에 저장
-        const newPost = {
-          _id: String(nextId++),
-          title,
-          content,
-          author,
-          createdAt: new Date().toISOString(),
-        };
-        posts.push(newPost);
-        return res.status(201).json(newPost);
-      }
-    } catch (error) {
-      console.error('Error creating post:', error);
-      return res.status(500).json({ message: 'Internal server error' });
-    }
-  } else if (req.method === 'PUT') { // PUT 요청 처리 (게시글 수정)
-    const urlParts = req.url.split('/');
-    const id = urlParts[urlParts.length - 1];
+      const newPost = {
+        _id: randomUUID(),
+        title: String(title).trim(),
+        content: String(content).trim(),
+        author: String(author).trim(),
+        createdAt: new Date().toISOString(),
+      };
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: 'Invalid Post ID' });
-    }
-
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk.toString();
-    });
-    req.on('end', async () => {
-      try {
-        const { title, content, author } = JSON.parse(body);
-        const updatedPost = await Post.findByIdAndUpdate(
-          id,
-          { title, content, author, createdAt: new Date().toISOString() }, // createdAt도 업데이트
-          { new: true, runValidators: true }
-        );
-        if (updatedPost) {
-          return res.status(200).json(updatedPost);
-        } else {
-          return res.status(404).json({ message: 'Post not found' });
+      return withStore(
+        async (sql) => {
+          const rows = await sql`
+            insert into qt_posts (id, title, content, author)
+            values (${newPost._id}, ${newPost.title}, ${newPost.content}, ${newPost.author})
+            returning *
+          `;
+          return res.status(201).json(toApiPost(rows[0]));
+        },
+        () => {
+          memoryPosts = [newPost, ...memoryPosts];
+          return res.status(201).json(newPost);
         }
-      } catch (error) {
-        console.error('Error updating post:', error);
-        return res.status(400).json({ message: 'Invalid data or error updating post', details: error.message });
-      }
-    });
-  } else if (req.method === 'DELETE') { // DELETE 요청 처리 (게시글 삭제)
-    const urlParts = req.url.split('/');
-    const id = urlParts[urlParts.length - 1];
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: 'Invalid Post ID' });
+      );
+    } catch (error) {
+      return res.status(400).json({ message: 'Invalid request body', details: error.message });
     }
+  }
+
+  if (req.method === 'PUT') {
+    if (!id) return res.status(400).json({ message: 'Post ID is required' });
 
     try {
-      const deletedPost = await Post.findByIdAndDelete(id);
-      if (deletedPost) {
-        return res.status(200).json({ message: 'Post deleted successfully', deletedPost });
-      } else {
-        return res.status(404).json({ message: 'Post not found' });
+      const { title, content, author } = await getBody(req);
+      if (!title || !content || !author) {
+        return res.status(400).json({ message: 'All fields are required' });
       }
+
+      return withStore(
+        async (sql) => {
+          const rows = await sql`
+            update qt_posts
+            set title = ${String(title).trim()},
+                content = ${String(content).trim()},
+                author = ${String(author).trim()},
+                updated_at = now()
+            where id = ${id}
+            returning *
+          `;
+          if (!rows[0]) return res.status(404).json({ message: 'Post not found' });
+          return res.status(200).json(toApiPost(rows[0]));
+        },
+        () => {
+          const index = memoryPosts.findIndex((item) => item._id === id);
+          if (index === -1) return res.status(404).json({ message: 'Post not found' });
+          memoryPosts[index] = {
+            ...memoryPosts[index],
+            title: String(title).trim(),
+            content: String(content).trim(),
+            author: String(author).trim(),
+          };
+          return res.status(200).json(memoryPosts[index]);
+        }
+      );
     } catch (error) {
-      console.error('Error deleting post:', error);
-      return res.status(500).json({ message: 'Error deleting post', details: error.message });
+      return res.status(400).json({ message: 'Invalid request body', details: error.message });
     }
-  } else {
-    res.status(405).json({ message: 'Method Not Allowed' });
   }
+
+  if (req.method === 'DELETE') {
+    if (!id) return res.status(400).json({ message: 'Post ID is required' });
+
+    return withStore(
+      async (sql) => {
+        const rows = await sql`delete from qt_posts where id = ${id} returning *`;
+        if (!rows[0]) return res.status(404).json({ message: 'Post not found' });
+        return res.status(200).json({ message: 'Post deleted successfully', deletedPost: toApiPost(rows[0]) });
+      },
+      () => {
+        const post = memoryPosts.find((item) => item._id === id);
+        if (!post) return res.status(404).json({ message: 'Post not found' });
+        memoryPosts = memoryPosts.filter((item) => item._id !== id);
+        return res.status(200).json({ message: 'Post deleted successfully', deletedPost: post });
+      }
+    );
+  }
+
+  return res.status(405).json({ message: 'Method Not Allowed' });
 }
