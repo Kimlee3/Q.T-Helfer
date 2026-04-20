@@ -11,7 +11,7 @@ function BoardDetail() {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const response = await fetch(`/api/posts/${id}`);
+        const response = await fetch(`/api/posts?id=${encodeURIComponent(id)}`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -30,7 +30,7 @@ function BoardDetail() {
   const handleDelete = async () => {
     if (window.confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
       try {
-        const response = await fetch(`/api/posts/${id}`, {
+        const response = await fetch(`/api/posts?id=${encodeURIComponent(id)}`, {
           method: 'DELETE',
         });
         if (!response.ok) {
