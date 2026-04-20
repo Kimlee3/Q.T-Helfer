@@ -25,11 +25,11 @@
     "vite": "^5.3.3"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
     "@sparticuz/chromium": "^131.0.0",
     "@vitejs/plugin-react": "^4.3.1",
     "express": "^5.1.0",
     "jsdom": "^26.1.0",
-    "mongoose": "^8.0.0",
     "puppeteer": "^24.20.0",
     "puppeteer-core": "^24.20.0",
     "react": "^18.2.0",
