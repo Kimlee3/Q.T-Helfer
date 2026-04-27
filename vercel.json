@@ -7,6 +7,14 @@
       "dest": "/assets/$1"
     },
     {
+      "src": "/luther1912.json",
+      "dest": "/luther1912.json"
+    },
+    {
+      "src": "/bible_kor.json",
+      "dest": "/bible_kor.json"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/$1"
     },

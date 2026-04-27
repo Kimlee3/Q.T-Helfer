@@ -5,11 +5,13 @@ import BoardList from './components/BoardList.jsx';
 import BoardWrite from './components/BoardWrite.jsx';
 import BoardDetail from './components/BoardDetail.jsx';
 import BoardEdit from './components/BoardEdit.jsx';
-import { fetchBibleVerses, fetchDailyDevotional } from './api.js';
+import { fetchBibleChapter, fetchBibleVerses, fetchDailyDevotional, fetchGermanBibleChapter, fetchGermanBibleVerses } from './api.js';
 import './style.css';
 
 const THEME_STORAGE_KEY = 'qt_helper_theme_preference';
+const LANGUAGE_STORAGE_KEY = 'qt_helper_language';
 const THEME_OPTIONS = ['auto', 'light', 'dark'];
+const LANGUAGE_OPTIONS = ['ko', 'de'];
 
 function isNightTime(date = new Date()) {
   const hour = date.getHours();
@@ -27,6 +29,17 @@ function getStoredThemePreference() {
   }
 }
 
+function getStoredLanguage() {
+  if (typeof window === 'undefined') return 'ko';
+
+  try {
+    const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    return LANGUAGE_OPTIONS.includes(stored) ? stored : 'ko';
+  } catch {
+    return 'ko';
+  }
+}
+
 function resolveDarkMode(themePreference) {
   if (themePreference === 'dark') return true;
   if (themePreference === 'light') return false;
@@ -36,6 +49,7 @@ function resolveDarkMode(themePreference) {
 function App() {
   const [bibleRef, setBibleRef] = useState('');
   const [bibleText, setBibleText] = useState('');
+  const [germanBibleText, setGermanBibleText] = useState('');
   const [prayerText, setPrayerText] = useState('');
   const [summaryText, setSummaryText] = useState('');
   const [capturedText, setCapturedText] = useState('');
@@ -49,6 +63,7 @@ function App() {
   const [showSaved, setShowSaved] = useState(false);
   const [themePreference, setThemePreference] = useState(() => getStoredThemePreference());
   const [darkMode, setDarkMode] = useState(() => resolveDarkMode(getStoredThemePreference()));
+  const [uiLanguage, setUiLanguage] = useState(() => getStoredLanguage());
 
   const handleFetchClick = async () => {
     if (!bibleRef) {
@@ -57,9 +72,24 @@ function App() {
     }
     setIsLoading(true);
     setBibleText('');
+    setGermanBibleText('');
     try {
-      const verses = await fetchBibleVerses(bibleRef);
-      setBibleText(verses);
+      const [verses, germanVerses] = await Promise.allSettled([
+        fetchBibleVerses(bibleRef),
+        fetchGermanBibleVerses(bibleRef),
+      ]);
+
+      if (verses.status === 'fulfilled') {
+        setBibleText(verses.value);
+      } else {
+        throw verses.reason;
+      }
+
+      setGermanBibleText(
+        germanVerses.status === 'fulfilled'
+          ? germanVerses.value
+          : `독일어 본문을 불러오지 못했습니다: ${germanVerses.reason.message}`
+      );
     } catch (error) {
       setBibleText(`오류: ${error.message}`);
     } finally {
@@ -70,12 +100,54 @@ function App() {
   const handleDailyDevotionalClick = async () => {
     setIsLoading(true);
     setBibleText('');
+    setGermanBibleText('');
     try {
       const data = await fetchDailyDevotional();
       setBibleRef(data.reference);
       setBibleText(data.text);
+      try {
+        const germanVerses = await fetchGermanBibleVerses(data.reference);
+        setGermanBibleText(germanVerses);
+      } catch (germanError) {
+        setGermanBibleText(`독일어 본문을 불러오지 못했습니다: ${germanError.message}`);
+      }
     } catch (error) {
       setBibleText(`오늘의 묵상 본문을 가져오는 데 실패했습니다: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOpenReadingPassage = async (bookKorean, chapter) => {
+    const nextReference = `${bookKorean} ${chapter}장`;
+    setIsLoading(true);
+    setBibleRef(nextReference);
+    setBibleText('');
+    setGermanBibleText('');
+
+    try {
+      const [verses, germanVerses] = await Promise.allSettled([
+        fetchBibleChapter(bookKorean, chapter),
+        fetchGermanBibleChapter(bookKorean, chapter),
+      ]);
+
+      if (verses.status === 'fulfilled') {
+        setBibleText(verses.value);
+      } else {
+        throw verses.reason;
+      }
+
+      setGermanBibleText(
+        germanVerses.status === 'fulfilled'
+          ? germanVerses.value
+          : `독일어 본문을 불러오지 못했습니다: ${germanVerses.reason.message}`
+      );
+
+      window.requestAnimationFrame(() => {
+        document.querySelector('.scripture-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    } catch (error) {
+      setBibleText(`본문을 가져오지 못했습니다: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -114,6 +186,15 @@ function App() {
     document.body.dataset.themePreference = themePreference;
   }, [darkMode, themePreference]);
 
+  useEffect(() => {
+    document.documentElement.lang = uiLanguage === 'de' ? 'de' : 'ko';
+    try {
+      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, uiLanguage);
+    } catch {
+      // Keep the app usable in browsers that block localStorage.
+    }
+  }, [uiLanguage]);
+
   const handleThemeToggle = () => {
     setThemePreference((current) => {
       const nextIndex = (THEME_OPTIONS.indexOf(current) + 1) % THEME_OPTIONS.length;
@@ -126,6 +207,9 @@ function App() {
 QT 나눔
 ${bibleRef}
 ${bibleText}
+
+[Deutsch - Luther 1912 in-app / Luther 1984 official reference]
+${germanBibleText}
 
 [내용 요약]
 ${summaryText}
@@ -188,6 +272,7 @@ ${finalPrayer}
             <MainLayout
               bibleRef={bibleRef} setBibleRef={setBibleRef}
               bibleText={bibleText} setBibleText={setBibleText}
+              germanBibleText={germanBibleText}
               prayerText={prayerText} setPrayerText={setPrayerText}
               summaryText={summaryText} setSummaryText={setSummaryText}
               capturedText={capturedText} setCapturedText={setCapturedText}
@@ -202,6 +287,9 @@ ${finalPrayer}
               handleSaveClick={handleSaveClick}
               handleCopyClick={() => handleCopyClick(savedContent)}
               handleShareClick={handleShareClick}
+              uiLanguage={uiLanguage}
+              setUiLanguage={setUiLanguage}
+              handleOpenReadingPassage={handleOpenReadingPassage}
             />
           }
         />

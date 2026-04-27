@@ -7,6 +7,7 @@ let memoryPosts = [
     title: '첫 번째 게시글',
     content: '안녕하세요! 첫 번째 게시글입니다.',
     author: '관리자',
+    category: 'meditation',
     createdAt: new Date().toISOString(),
   },
   {
@@ -14,6 +15,7 @@ let memoryPosts = [
     title: 'QT 헬퍼 사용법',
     content: 'QT 헬퍼를 사용하여 매일 말씀을 읽어보세요.',
     author: '관리자',
+    category: 'completion',
     createdAt: new Date().toISOString(),
   },
 ];
@@ -48,7 +50,9 @@ async function ensureSchema(sql) {
         created_at timestamptz not null default now(),
         updated_at timestamptz not null default now()
       )
-    `.then(() => {
+    `;
+    dbInitPromise = dbInitPromise.then(async () => {
+      await sql`alter table qt_posts add column if not exists category text not null default 'meditation'`;
       dbReady = true;
     });
   }
@@ -91,6 +95,7 @@ function toApiPost(row) {
     title: row.title,
     content: row.content,
     author: row.author,
+    category: row.category || 'meditation',
     createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
   };
 }
@@ -148,7 +153,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      const { title, content, author } = await getBody(req);
+      const { title, content, author, category } = await getBody(req);
       if (!title || !content || !author) {
         return res.status(400).json({ message: 'All fields are required' });
       }
@@ -158,14 +163,15 @@ export default async function handler(req, res) {
         title: String(title).trim(),
         content: String(content).trim(),
         author: String(author).trim(),
+        category: ['meditation', 'completion'].includes(category) ? category : 'meditation',
         createdAt: new Date().toISOString(),
       };
 
       return withStore(
         async (sql) => {
           const rows = await sql`
-            insert into qt_posts (id, title, content, author)
-            values (${newPost._id}, ${newPost.title}, ${newPost.content}, ${newPost.author})
+            insert into qt_posts (id, title, content, author, category)
+            values (${newPost._id}, ${newPost.title}, ${newPost.content}, ${newPost.author}, ${newPost.category})
             returning *
           `;
           return res.status(201).json(toApiPost(rows[0]));
@@ -184,7 +190,7 @@ export default async function handler(req, res) {
     if (!id) return res.status(400).json({ message: 'Post ID is required' });
 
     try {
-      const { title, content, author } = await getBody(req);
+      const { title, content, author, category } = await getBody(req);
       if (!title || !content || !author) {
         return res.status(400).json({ message: 'All fields are required' });
       }
@@ -196,6 +202,7 @@ export default async function handler(req, res) {
             set title = ${String(title).trim()},
                 content = ${String(content).trim()},
                 author = ${String(author).trim()},
+                category = ${['meditation', 'completion'].includes(category) ? category : 'meditation'},
                 updated_at = now()
             where id = ${id}
             returning *
@@ -211,6 +218,7 @@ export default async function handler(req, res) {
             title: String(title).trim(),
             content: String(content).trim(),
             author: String(author).trim(),
+            category: ['meditation', 'completion'].includes(category) ? category : 'meditation',
           };
           return res.status(200).json(memoryPosts[index]);
         }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { BOARD_CATEGORIES, normalizeCategory } from '../boardCategories.js';
 
 function BoardEdit() {
   const { id } = useParams();
@@ -7,6 +8,7 @@ function BoardEdit() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [author, setAuthor] = useState('');
+  const [category, setCategory] = useState('meditation');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -21,6 +23,7 @@ function BoardEdit() {
         setTitle(data.title);
         setContent(data.content);
         setAuthor(data.author);
+        setCategory(normalizeCategory(data.category));
       } catch (err) {
         setError(err.message);
       } finally {
@@ -40,7 +43,7 @@ function BoardEdit() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ title, content, author }),
+        body: JSON.stringify({ title, content, author, category }),
       });
       if (!response.ok) {
         throw new Error('게시글 수정에 실패했습니다.');
@@ -67,6 +70,18 @@ function BoardEdit() {
         </div>
       </div>
       <form onSubmit={handleSubmit} className="journal-form">
+        <div className="form-field">
+          <label htmlFor="category">게시판</label>
+          <select
+            id="category"
+            value={category}
+            onChange={(e) => setCategory(normalizeCategory(e.target.value))}
+          >
+            {Object.entries(BOARD_CATEGORIES).map(([key, item]) => (
+              <option key={key} value={key}>{item.label}</option>
+            ))}
+          </select>
+        </div>
         <div className="form-field">
           <label htmlFor="title">제목</label>
           <input

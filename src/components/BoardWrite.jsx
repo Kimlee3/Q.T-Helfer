@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { BOARD_CATEGORIES, normalizeCategory } from '../boardCategories.js';
 
 function BoardWrite() {
+  const [searchParams] = useSearchParams();
+  const initialCategory = normalizeCategory(searchParams.get('category'));
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [author, setAuthor] = useState('');
+  const [category, setCategory] = useState(initialCategory);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -20,7 +24,7 @@ function BoardWrite() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ title, content, author }),
+        body: JSON.stringify({ title, content, author, category }),
       });
 
       if (!response.ok) {
@@ -43,10 +47,22 @@ function BoardWrite() {
         <div>
           <p className="eyebrow">Write</p>
           <h2>새 나눔 작성</h2>
-          <p>오늘의 묵상을 한 편의 짧은 기록처럼 남겨보세요.</p>
+          <p>묵상 나눔 또는 통독 완주 기록을 선택해 남겨보세요.</p>
         </div>
       </div>
       <form onSubmit={handleSubmit} className="journal-form">
+        <div className="form-field">
+          <label htmlFor="category">게시판</label>
+          <select
+            id="category"
+            value={category}
+            onChange={(e) => setCategory(normalizeCategory(e.target.value))}
+          >
+            {Object.entries(BOARD_CATEGORIES).map(([key, item]) => (
+              <option key={key} value={key}>{item.label}</option>
+            ))}
+          </select>
+        </div>
         <div className="form-field">
           <label htmlFor="title">제목</label>
           <input

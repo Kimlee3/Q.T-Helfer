@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { BOARD_CATEGORIES, normalizeCategory } from '../boardCategories.js';
 
 function BoardDetail() {
   const { id } = useParams();
@@ -47,14 +48,15 @@ function BoardDetail() {
   if (loading) return <div className="container board-shell">게시글을 불러오는 중...</div>;
   if (error) return <div className="container board-shell">오류: {error}</div>;
   if (!post) return <div className="container board-shell">게시글을 찾을 수 없습니다.</div>;
+  const category = BOARD_CATEGORIES[normalizeCategory(post.category)];
 
   return (
     <div className="container board-shell">
       <article className="post-detail">
-        <p className="eyebrow">Shared Journal</p>
+        <p className="eyebrow">{category.eyebrow}</p>
         <h2>{post.title}</h2>
         <p className="post-meta">
-          {post.author} · {new Date(post.createdAt).toLocaleDateString()}
+          {category.label} · {post.author} · {new Date(post.createdAt).toLocaleDateString()}
         </p>
       <div className="post-body">
         {post.content}

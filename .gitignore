@@ -121,3 +121,4 @@ _site/
 
 # Build output
 build/
+.vercel
