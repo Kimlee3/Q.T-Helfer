@@ -6,8 +6,55 @@ function stripScriptureForSpeech(text) {
     .replace(/📖|📆/g, '')
     .replace(/Lutherbibel 1912.*$/gm, '')
     .replace(/Luther 1984.*$/gm, '')
+    .replace(/\b\d+\s*[:：]\s*\d+\b/g, '')
+    .replace(/\b\d+\b(?=\s)/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+const preferredVoiceNames = {
+  'ko-KR': ['Yuna', 'Sora', 'Google 한국의', 'Google Korean', 'Naver', 'Samsung Korean'],
+  'de-DE': ['Anna', 'Petra', 'Markus', 'Google Deutsch', 'Google German', 'Microsoft Katja', 'Microsoft Conrad'],
+};
+
+function splitForNaturalReading(text) {
+  const cleanText = stripScriptureForSpeech(text);
+  if (!cleanText) return [];
+
+  const sentences = cleanText
+    .replace(/([.!?。！？])\s+/g, '$1|')
+    .replace(/([다요죠까라며네])\.\s+/g, '$1.|')
+    .split('|')
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+  const chunks = [];
+  let current = '';
+  for (const sentence of sentences) {
+    const next = current ? `${current} ${sentence}` : sentence;
+    if (next.length > 220 && current) {
+      chunks.push(current);
+      current = sentence;
+    } else {
+      current = next;
+    }
+  }
+  if (current) chunks.push(current);
+  return chunks;
+}
+
+function chooseNaturalVoice(voices, lang) {
+  const langPrefix = lang.slice(0, 2).toLowerCase();
+  const langVoices = voices.filter((voice) => voice.lang?.toLowerCase().startsWith(langPrefix));
+  const preferredNames = preferredVoiceNames[lang] || [];
+
+  return (
+    langVoices.find((voice) => preferredNames.some((name) => voice.name.includes(name))) ||
+    langVoices.find((voice) => /premium|enhanced|neural|natural|google|microsoft|samsung/i.test(voice.name)) ||
+    langVoices[0] ||
+    voices[0] ||
+    null
+  );
 }
 
 function Search({ 
@@ -21,6 +68,7 @@ function Search({
   uiLanguage = 'ko'
 }) {
   const [speakingKey, setSpeakingKey] = useState('');
+  const [availableVoices, setAvailableVoices] = useState([]);
   const context = getScriptureContext(bibleRef, bibleText, uiLanguage);
   const copy = {
     ko: {
@@ -41,6 +89,8 @@ function Search({
       readKorean: '한국어 읽어주기',
       readGerman: '독일어 읽어주기',
       stopReading: '읽기 멈춤',
+      naturalVoice: '자연 낭독',
+      voiceHint: '기기 안의 가장 자연스러운 음성을 자동 선택합니다.',
       speechUnsupported: '이 브라우저는 음성 읽기를 지원하지 않습니다.',
       contextEyebrow: 'Background',
       contextTitle: '본문 배경',
@@ -68,6 +118,8 @@ function Search({
       readKorean: 'Koreanisch vorlesen',
       readGerman: 'Deutsch vorlesen',
       stopReading: 'Vorlesen stoppen',
+      naturalVoice: 'Natürlich vorlesen',
+      voiceHint: 'Die natürlichste Stimme dieses Geräts wird automatisch gewählt.',
       speechUnsupported: 'Dieser Browser unterstützt Vorlesen nicht.',
       contextEyebrow: 'Background',
       contextTitle: 'Hintergrund zum Text',
@@ -83,24 +135,54 @@ function Search({
     window.speechSynthesis?.cancel();
   }, []);
 
+  useEffect(() => {
+    if (!('speechSynthesis' in window)) return undefined;
+
+    const updateVoices = () => setAvailableVoices(window.speechSynthesis.getVoices());
+    updateVoices();
+    window.speechSynthesis.addEventListener?.('voiceschanged', updateVoices);
+
+    return () => {
+      window.speechSynthesis.removeEventListener?.('voiceschanged', updateVoices);
+    };
+  }, []);
+
   const speakText = (text, lang, key) => {
     if (!('speechSynthesis' in window)) {
       alert(copy.speechUnsupported);
       return;
     }
 
-    const cleanText = stripScriptureForSpeech(text);
-    if (!cleanText) return;
+    const chunks = splitForNaturalReading(text);
+    if (!chunks.length) return;
 
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = lang;
-    utterance.rate = lang === 'de-DE' ? 0.88 : 0.92;
-    utterance.pitch = 1;
-    utterance.onend = () => setSpeakingKey('');
-    utterance.onerror = () => setSpeakingKey('');
     setSpeakingKey(key);
-    window.speechSynthesis.speak(utterance);
+
+    const naturalVoice = chooseNaturalVoice(availableVoices, lang);
+    let chunkIndex = 0;
+
+    const speakNextChunk = () => {
+      if (chunkIndex >= chunks.length) {
+        setSpeakingKey('');
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(chunks[chunkIndex]);
+      utterance.lang = lang;
+      utterance.voice = naturalVoice;
+      utterance.rate = lang === 'de-DE' ? 0.82 : 0.86;
+      utterance.pitch = lang === 'de-DE' ? 0.96 : 0.98;
+      utterance.volume = 1;
+      utterance.onend = () => {
+        chunkIndex += 1;
+        window.setTimeout(speakNextChunk, 180);
+      };
+      utterance.onerror = () => setSpeakingKey('');
+      window.speechSynthesis.speak(utterance);
+    };
+
+    speakNextChunk();
   };
 
   const stopReading = () => {
@@ -140,13 +222,14 @@ function Search({
               <textarea className="scripture-textarea" value={bibleText} readOnly placeholder={copy.textarea}></textarea>
               <div className="speech-controls">
                 <button type="button" onClick={() => speakText(bibleText, 'ko-KR', 'ko')} disabled={!bibleText}>
-                  <i className="fas fa-volume-up"></i> {copy.readKorean}
+                  <i className="fas fa-volume-up"></i> {copy.naturalVoice}
                 </button>
                 {speakingKey === 'ko' && (
                   <button type="button" onClick={stopReading} className="stop-speech">
                     <i className="fas fa-stop"></i> {copy.stopReading}
                   </button>
                 )}
+                <span className="speech-hint">{copy.voiceHint}</span>
               </div>
             </label>
             <label className="bible-pane german-pane">
@@ -157,13 +240,14 @@ function Search({
               <textarea className="scripture-textarea" value={germanBibleText} readOnly placeholder={copy.germanPlaceholder}></textarea>
               <div className="speech-controls">
                 <button type="button" onClick={() => speakText(germanBibleText, 'de-DE', 'de')} disabled={!germanBibleText}>
-                  <i className="fas fa-volume-up"></i> {copy.readGerman}
+                  <i className="fas fa-volume-up"></i> {copy.naturalVoice}
                 </button>
                 {speakingKey === 'de' && (
                   <button type="button" onClick={stopReading} className="stop-speech">
                     <i className="fas fa-stop"></i> {copy.stopReading}
                   </button>
                 )}
+                <span className="speech-hint">{copy.voiceHint}</span>
               </div>
               <p className="version-note">{copy.germanRights}</p>
               <a
