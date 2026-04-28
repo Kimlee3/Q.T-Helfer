@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { getReadingStats, newTestamentBooks, oldTestamentBooks } from '../readingPlan.js';
 import { getBoardEditToken, saveBoardEditToken } from '../boardEditTokens.js';
 
@@ -91,6 +91,7 @@ function ReadingPlan({ uiLanguage = 'ko', onOpenPassage }) {
   const [profile, setProfile] = useState(() => readProfile());
   const [syncState, setSyncState] = useState('');
   const [openingKey, setOpeningKey] = useState('');
+  const [storageStatus, setStorageStatus] = useState(null);
   const books = scope === 'old' ? oldTestamentBooks : newTestamentBooks;
   const stats = useMemo(() => getReadingStats(completed), [completed]);
   const currentStats = useMemo(() => getScopeStats(completed, scope), [completed, scope]);
@@ -112,6 +113,7 @@ function ReadingPlan({ uiLanguage = 'ko', onOpenPassage }) {
       boardSyncHelp: '이름을 입력하면 장을 체크할 때마다 통독 완주 기록 게시판의 내 기록이 업데이트됩니다.',
       synced: '통독 게시판 기록이 업데이트되었습니다.',
       syncReady: '이름을 입력하면 게시판 업데이트가 켜집니다.',
+      syncBlocked: '통독 체크는 이 브라우저에 저장됩니다. 게시판 반영은 영구 저장소 연결 후 켜집니다.',
       syncFailed: '게시판 업데이트에 실패했습니다. 통독 체크는 이 브라우저에 저장되었습니다.',
       openChapter: '본문 보기',
       openingChapter: '불러오는 중',
@@ -135,6 +137,7 @@ function ReadingPlan({ uiLanguage = 'ko', onOpenPassage }) {
       boardSyncHelp: 'Wenn ein Name eingetragen ist, wird dein Lesestand bei jedem Kapitel im Board aktualisiert.',
       synced: 'Der Lesestand wurde im Board aktualisiert.',
       syncReady: 'Trage einen Namen ein, um das Board-Update zu aktivieren.',
+      syncBlocked: 'Der Lesestand bleibt in diesem Browser. Das Board-Update wird nach der dauerhaften Speicherung aktiviert.',
       syncFailed: 'Board-Update fehlgeschlagen. Der Lesestand bleibt in diesem Browser gespeichert.',
       openChapter: 'Text lesen',
       openingChapter: 'Lädt',
@@ -142,6 +145,13 @@ function ReadingPlan({ uiLanguage = 'ko', onOpenPassage }) {
       unmarkRead: 'Markierung lösen',
     },
   }[uiLanguage];
+
+  useEffect(() => {
+    fetch('/api/posts?status=1')
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => setStorageStatus(data))
+      .catch(() => setStorageStatus(null));
+  }, []);
 
   function updateProfile(nextPatch) {
     const next = { ...profile, ...nextPatch };
@@ -178,6 +188,10 @@ function ReadingPlan({ uiLanguage = 'ko', onOpenPassage }) {
     const readerName = profile.readerName.trim();
     if (!readerName) {
       setSyncState(copy.syncReady);
+      return;
+    }
+    if (storageStatus && !storageStatus.writable) {
+      setSyncState(copy.syncBlocked);
       return;
     }
 
