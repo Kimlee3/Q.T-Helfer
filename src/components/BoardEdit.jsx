@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BOARD_CATEGORIES, normalizeCategory } from '../boardCategories.js';
+import { getBoardEditToken } from '../boardEditTokens.js';
 
 function BoardEdit() {
   const { id } = useParams();
@@ -11,6 +12,7 @@ function BoardEdit() {
   const [category, setCategory] = useState('meditation');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const editToken = getBoardEditToken(id);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -42,11 +44,13 @@ function BoardEdit() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'X-Edit-Token': editToken,
         },
         body: JSON.stringify({ title, content, author, category }),
       });
       if (!response.ok) {
-        throw new Error('게시글 수정에 실패했습니다.');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || '게시글 수정에 실패했습니다.');
       }
       alert('게시글이 수정되었습니다.');
       navigate(`/board/${id}`);
@@ -59,6 +63,22 @@ function BoardEdit() {
 
   if (loading) return <div className="container board-shell">게시글 정보를 불러오는 중...</div>;
   if (error) return <div className="container board-shell">오류: {error}</div>;
+  if (!editToken) {
+    return (
+      <div className="container board-shell">
+        <div className="board-hero">
+          <div>
+            <p className="eyebrow">Protected</p>
+            <h2>수정 권한 확인 필요</h2>
+            <p>이 글을 작성한 브라우저에서만 수정할 수 있습니다.</p>
+          </div>
+        </div>
+        <button type="button" onClick={() => navigate(`/board/${id}`)} className="secondary-btn">
+          돌아가기
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="container board-shell">

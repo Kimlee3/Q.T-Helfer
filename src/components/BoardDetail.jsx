@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { BOARD_CATEGORIES, normalizeCategory } from '../boardCategories.js';
+import { getBoardEditToken, removeBoardEditToken } from '../boardEditTokens.js';
 
 function BoardDetail() {
   const { id } = useParams();
@@ -8,6 +9,7 @@ function BoardDetail() {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const editToken = getBoardEditToken(id);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -33,10 +35,14 @@ function BoardDetail() {
       try {
         const response = await fetch(`/api/posts?id=${encodeURIComponent(id)}`, {
           method: 'DELETE',
+          headers: {
+            'X-Edit-Token': editToken,
+          },
         });
         if (!response.ok) {
           throw new Error('게시글 삭제에 실패했습니다.');
         }
+        removeBoardEditToken(id);
         alert('게시글이 삭제되었습니다.');
         navigate('/board');
       } catch (err) {
@@ -66,14 +72,18 @@ function BoardDetail() {
         <Link to="/board" className="secondary-btn">
           목록으로
         </Link>
-        <div>
-          <Link to={`/board/edit/${id}`} className="primary-btn">
-            수정
-          </Link>
-          <button onClick={handleDelete} className="danger-btn">
-            삭제
-          </button>
-        </div>
+        {editToken ? (
+          <div>
+            <Link to={`/board/edit/${id}`} className="primary-btn">
+              수정
+            </Link>
+            <button onClick={handleDelete} className="danger-btn">
+              삭제
+            </button>
+          </div>
+        ) : (
+          <p className="owner-note">작성한 브라우저에서만 수정과 삭제가 열립니다.</p>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { BOARD_CATEGORIES, normalizeCategory } from '../boardCategories.js';
+import { saveBoardEditToken } from '../boardEditTokens.js';
 
 function BoardWrite() {
   const [searchParams] = useSearchParams();
@@ -9,9 +10,17 @@ function BoardWrite() {
   const [content, setContent] = useState('');
   const [author, setAuthor] = useState('');
   const [category, setCategory] = useState(initialCategory);
+  const [storageStatus, setStorageStatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetch('/api/posts?status=1')
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => setStorageStatus(data))
+      .catch(() => setStorageStatus(null));
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent default form submission
@@ -29,11 +38,13 @@ function BoardWrite() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        throw new Error(errorData.storage?.message || errorData.message || `HTTP error! status: ${response.status}`);
       }
 
+      const data = await response.json();
+      saveBoardEditToken(data._id || data.id, data.editToken);
       alert('게시글이 성공적으로 작성되었습니다!');
-      navigate('/board'); // Redirect to board list
+      navigate(data._id ? `/board/${data._id}` : '/board');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -50,6 +61,12 @@ function BoardWrite() {
           <p>묵상 나눔 또는 통독 완주 기록을 선택해 남겨보세요.</p>
         </div>
       </div>
+      {storageStatus && !storageStatus.durable ? (
+        <div className={storageStatus.writable ? 'storage-status temporary' : 'storage-status blocked'}>
+          <strong>{storageStatus.label}</strong>
+          <span>{storageStatus.message}</span>
+        </div>
+      ) : null}
       <form onSubmit={handleSubmit} className="journal-form">
         <div className="form-field">
           <label htmlFor="category">게시판</label>
@@ -94,8 +111,8 @@ function BoardWrite() {
           ></textarea>
         </div>
         <div className="form-actions">
-          <button type="submit" disabled={loading} className="primary-btn">
-            {loading ? '작성 중...' : '나눔 저장'}
+          <button type="submit" disabled={loading || (storageStatus && !storageStatus.writable)} className="primary-btn">
+            {loading ? '작성 중...' : storageStatus && !storageStatus.writable ? '저장소 연결 필요' : '나눔 저장'}
           </button>
           <button type="button" onClick={() => navigate('/board')} className="secondary-btn">
             목록으로

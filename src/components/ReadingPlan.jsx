@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { getReadingStats, newTestamentBooks, oldTestamentBooks } from '../readingPlan.js';
+import { getBoardEditToken, saveBoardEditToken } from '../boardEditTokens.js';
 
 const STORAGE_KEY = 'qt_helper_bible_reading_progress';
 const PROFILE_KEY = 'qt_helper_bible_reading_profile';
@@ -59,6 +60,15 @@ function writePostIds(ids) {
   } catch {
     // Keep local progress usable even if localStorage is blocked.
   }
+}
+
+function getStoredPostReference(value) {
+  if (!value) return { id: '', editToken: '' };
+  if (typeof value === 'string') return { id: value, editToken: getBoardEditToken(value) };
+  return {
+    id: value.id || value._id || '',
+    editToken: value.editToken || getBoardEditToken(value.id || value._id),
+  };
 }
 
 function percent(done, total) {
@@ -173,7 +183,8 @@ function ReadingPlan({ uiLanguage = 'ko', onOpenPassage }) {
 
     const postIds = readPostIds();
     const key = `${readerName}:${selectedScope}`;
-    const existingId = postIds[key];
+    const existing = getStoredPostReference(postIds[key]);
+    const existingId = existing.id;
     const postBody = buildCompletionPost(progress, selectedScope);
 
     try {
@@ -181,6 +192,7 @@ function ReadingPlan({ uiLanguage = 'ko', onOpenPassage }) {
         method: existingId ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(existing.editToken ? { 'X-Edit-Token': existing.editToken } : {}),
         },
         body: JSON.stringify(postBody),
       });
@@ -190,9 +202,15 @@ function ReadingPlan({ uiLanguage = 'ko', onOpenPassage }) {
       }
 
       const data = await response.json();
+      const nextId = data._id || data.id || existingId;
+      const nextEditToken = data.editToken || existing.editToken;
+      saveBoardEditToken(nextId, nextEditToken);
       const nextIds = {
         ...postIds,
-        [key]: data._id || data.id || existingId,
+        [key]: {
+          id: nextId,
+          editToken: nextEditToken,
+        },
       };
       writePostIds(nextIds);
       setSyncState(copy.synced);
