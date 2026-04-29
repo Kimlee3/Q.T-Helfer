@@ -488,6 +488,41 @@ body.dark-mode .context-list dt {
   line-height: 1.65;
 }
 
+.context-summary {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  border-radius: 22px;
+  color: var(--on-surface);
+  background: rgba(255, 255, 255, 0.62);
+  outline: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
+}
+
+body.dark-mode .context-summary {
+  background: rgba(255, 255, 255, 0.08);
+  outline-color: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.context-summary p {
+  margin: 0;
+  color: var(--on-surface);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.58;
+  white-space: pre-wrap;
+}
+
+.context-summary p:first-child,
+.context-summary p:has(+ .summary-spacer) {
+  font-weight: 900;
+}
+
+.context-summary .summary-spacer {
+  min-height: 8px;
+}
+
 .context-note {
   margin: 18px 0 0;
   padding-top: 14px;

@@ -191,6 +191,111 @@ function formatReferenceLabel(parsed, locale = 'ko') {
   return `${bookLabel} ${verseRange}`;
 }
 
+function formatDevotionalHeader(reference = '', passageText = '') {
+  const firstLine = String(passageText || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .find(Boolean);
+
+  if (firstLine?.startsWith('📆')) return firstLine;
+  if (reference) return `📆 ${reference}`;
+  return '📆 오늘의 묵상 본문';
+}
+
+function isLukeSabbathHealing(parsed, passageText = '') {
+  const source = String(passageText || '');
+  return (
+    parsed?.bookName === '누가복음' &&
+    parsed.chapter === 13 &&
+    parsed.startVerse <= 10 &&
+    parsed.endVerse >= 21 &&
+    /열여덟|안식일|겨자씨|누룩/.test(source)
+  );
+}
+
+function buildKoDevotionalSummary(reference = '', passageText = '', parsed = null) {
+  const header = formatDevotionalHeader(reference, passageText);
+
+  if (isLukeSabbathHealing(parsed, passageText)) {
+    return `${header}
+📌 한줄 핵심 요약
+
+👉 예수님은 율법보다 사람을 살리는 것이 더 중요하다고 가르치시며, 하나님의 나라는 작지만 점점 크게 확장되는 것임을 보여주신다.
+
+📖 구조별 요약
+1️⃣ 안식일 치유 사건 (10~17절)
+18년 동안 병으로 굽은 여자를 예수님이 안식일에 치유
+회당장은 “안식일에 왜 치료하냐”고 비판
+예수님은:
+“짐승도 안식일에 풀어 물 먹이면서”
+“사람을 살리는 일은 왜 안되냐?”라고 반박
+결과:
+반대자들은 부끄러워하고
+사람들은 기뻐함
+
+👉 핵심: 형식(율법)보다 본질(사람을 살리는 것)
+
+2️⃣ 하나님 나라 비유 (18~21절)
+
+예수님이 하나님 나라를 2가지로 설명:
+
+🌱 겨자씨
+→ 아주 작지만 크게 자람
+🍞 누룩
+→ 보이지 않지만 전체를 변화시킴
+
+👉 핵심:
+하나님의 나라는 작게 시작하지만 점점 확장되고, 전체를 변화시킨다`;
+  }
+
+  const label = formatReferenceLabel(parsed, 'ko');
+  const themes = detectPassageThemes(reference, passageText, 'ko');
+  const lens = detectReadingLens(reference, passageText, 'ko');
+  const mainPoint = themes[0] || '오늘 본문은 하나님이 어떤 분이신지, 그리고 사람이 어떻게 응답해야 하는지를 차분히 보여줍니다.';
+
+  return `${header}
+📌 한줄 핵심 요약
+
+👉 ${mainPoint}
+
+📖 구조별 요약
+1️⃣ 본문 흐름 살피기
+${label} 안에서 반복되는 말, 중심 인물, 하나님이 하시는 일을 먼저 확인합니다.
+
+👉 핵심: 본문이 말하는 중심 메시지를 놓치지 않는 것
+
+2️⃣ 오늘의 적용 찾기
+${lens}
+
+👉 핵심:
+말씀을 정보로만 보지 않고, 오늘의 믿음과 선택으로 연결한다`;
+}
+
+function buildDeDevotionalSummary(reference = '', passageText = '', parsed = null) {
+  const header = formatDevotionalHeader(reference, passageText);
+  const label = formatReferenceLabel(parsed, 'de');
+  const themes = detectPassageThemes(reference, passageText, 'de');
+  const lens = detectReadingLens(reference, passageText, 'de');
+  const mainPoint = themes[0] || 'Der Abschnitt zeigt, wer Gott ist und wie Menschen auf sein Wort antworten koennen.';
+
+  return `${header}
+📌 Kurze Kernaussage
+
+👉 ${mainPoint}
+
+📖 Zusammenfassung nach Struktur
+1️⃣ Den Textfluss beobachten
+Lies ${label} mit Blick auf wiederholte Worte, handelnde Personen und Gottes Handeln.
+
+👉 Kern: Die Hauptbewegung des Textes nicht verlieren
+
+2️⃣ Anwendung fuer heute
+${lens}
+
+👉 Kern:
+Den Bibeltext nicht nur als Information lesen, sondern als Einladung zum Glauben und Handeln.`;
+}
+
 function detectPassageThemes(reference = '', passageText = '', locale = 'ko') {
   const source = `${reference}\n${passageText}`.toLowerCase();
   const themes = [];
@@ -264,6 +369,10 @@ export function getScriptureContext(reference = '', passageText = '', locale = '
       type: DEFAULT_CONTEXT[lang].type,
       setting: [DEFAULT_CONTEXT[lang].setting, ...themes].filter(Boolean).join(' '),
       lens: dynamicLens || DEFAULT_CONTEXT[lang].lens,
+      summary:
+        lang === 'de'
+          ? buildDeDevotionalSummary(reference, passageText, parsed)
+          : buildKoDevotionalSummary(reference, passageText, parsed),
     };
   }
 
@@ -280,5 +389,9 @@ export function getScriptureContext(reference = '', passageText = '', locale = '
     type: context.type[lang],
     setting: [baseSetting, chapterHint.trim(), ...themes].filter(Boolean).join(' '),
     lens: dynamicLens || context.lens[lang],
+    summary:
+      lang === 'de'
+        ? buildDeDevotionalSummary(reference, passageText, parsed || { bookName })
+        : buildKoDevotionalSummary(reference, passageText, parsed || { bookName }),
   };
 }

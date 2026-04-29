@@ -93,12 +93,12 @@ function Search({
       voiceHint: '기기 안의 가장 자연스러운 음성을 자동 선택합니다.',
       speechUnsupported: '이 브라우저는 음성 읽기를 지원하지 않습니다.',
       contextEyebrow: 'Background',
-      contextTitle: '본문 배경',
+      contextTitle: '배경 요약',
       book: '책',
       type: '성격',
       setting: '큰 흐름',
       lens: '오늘 읽는 렌즈',
-      note: '본문과 배경 설명을 함께 보며 오늘 묵상의 흐름을 차분히 정리해 보세요.',
+      note: '본문을 구조별로 보며 오늘 묵상의 핵심을 빠르게 붙잡아 보세요.',
     },
     de: {
       eyebrow: 'Schrift',
@@ -269,24 +269,34 @@ function Search({
               <h3>{copy.contextTitle}</h3>
             </div>
           </div>
-          <dl className="context-list">
-            <div>
-              <dt>{copy.book}</dt>
-              <dd>{context.book}</dd>
+          {context.summary ? (
+            <div className="context-summary">
+              {context.summary.split('\n').map((line, index) => (
+                <p key={`${line}-${index}`} className={!line.trim() ? 'summary-spacer' : undefined}>
+                  {line}
+                </p>
+              ))}
             </div>
-            <div>
-              <dt>{copy.type}</dt>
-              <dd>{context.type}</dd>
-            </div>
-            <div>
-              <dt>{copy.setting}</dt>
-              <dd>{context.setting}</dd>
-            </div>
-            <div>
-              <dt>{copy.lens}</dt>
-              <dd>{context.lens}</dd>
-            </div>
-          </dl>
+          ) : (
+            <dl className="context-list">
+              <div>
+                <dt>{copy.book}</dt>
+                <dd>{context.book}</dd>
+              </div>
+              <div>
+                <dt>{copy.type}</dt>
+                <dd>{context.type}</dd>
+              </div>
+              <div>
+                <dt>{copy.setting}</dt>
+                <dd>{context.setting}</dd>
+              </div>
+              <div>
+                <dt>{copy.lens}</dt>
+                <dd>{context.lens}</dd>
+              </div>
+            </dl>
+          )}
           <p className="context-note">{copy.note}</p>
         </aside>
       </div>
