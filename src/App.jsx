@@ -46,6 +46,13 @@ function resolveDarkMode(themePreference) {
   return isNightTime();
 }
 
+function formatKoreanDateTitle(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}년 ${month}월 ${day}일 말씀 묵상`;
+}
+
 function App() {
   const [bibleRef, setBibleRef] = useState('');
   const [bibleText, setBibleText] = useState('');
@@ -203,28 +210,27 @@ function App() {
   };
 
   const handleSaveClick = () => {
+    const dateTitle = formatKoreanDateTitle();
     const content = `
-QT 나눔
-${bibleRef}
-${bibleText}
+${dateTitle}
 
-[Deutsch - Luther 1912 in-app / Luther 1984 official reference]
-${germanBibleText}
+🙏 들어가는 기도
+${prayerText}
 
-[내용 요약]
+📝 본문 요약
 ${summaryText}
 
-[붙잡은 말씀]
+💡 붙잡은 말씀
 ${capturedText}
 
-[느낌과 묵상]
+✨ 느낌과 묵상
 ${meditationText}
 
-[적용과 결단]
+🛤 적용과 결단
 - 성품: ${characterText}
 - 행동: ${actionText}
 
-[마무리 기도]
+🙌 올려드리는 기도
 ${finalPrayer}
     `.trim();
     setSavedContent(content);
