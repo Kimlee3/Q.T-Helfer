@@ -8,15 +8,17 @@ function Header({ uiLanguage = 'ko', setUiLanguage }) {
       title: '조용한 말씀 작업실',
       subtitle: '오늘의 본문을 천천히 읽고, 마음에 남은 문장을 삶의 결단으로 정리합니다.',
       home: '묵상실',
-      board: '나눔 게시판',
+      reading: '통독실',
+      board: '나눔실',
       languageLabel: '언어 선택',
     },
     de: {
       eyebrow: 'Digital Sanctuary',
       title: 'Stiller Bibelarbeitsraum',
       subtitle: 'Lies den heutigen Bibeltext langsam und halte fest, was daraus für dein Leben wird.',
-      home: 'Andacht',
-      board: 'Austausch',
+      home: 'Andachtsraum',
+      reading: 'Leseplan',
+      board: 'Austauschraum',
       languageLabel: 'Sprache wählen',
     },
   }[uiLanguage];
@@ -47,6 +49,7 @@ function Header({ uiLanguage = 'ko', setUiLanguage }) {
             </button>
           </div>
           <Link to="/" className="ghost-btn">{copy.home}</Link>
+          <Link to="/reading" className="ghost-btn">{copy.reading}</Link>
           <Link to="/board" className="ghost-btn">{copy.board}</Link>
         </nav>
       </div>

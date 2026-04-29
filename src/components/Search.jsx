@@ -69,7 +69,9 @@ function Search({
 }) {
   const [speakingKey, setSpeakingKey] = useState('');
   const [availableVoices, setAvailableVoices] = useState([]);
-  const context = getScriptureContext(bibleRef, bibleText, uiLanguage);
+  const fallbackContext = getScriptureContext(bibleRef, bibleText, uiLanguage);
+  const [aiContext, setAiContext] = useState(fallbackContext);
+  const context = aiContext || fallbackContext;
   const copy = {
     ko: {
       eyebrow: 'Scripture',
@@ -134,6 +136,36 @@ function Search({
   useEffect(() => () => {
     window.speechSynthesis?.cancel();
   }, []);
+
+  useEffect(() => {
+    const nextFallback = getScriptureContext(bibleRef, bibleText, uiLanguage);
+    setAiContext(nextFallback);
+
+    if (!bibleText || bibleText.startsWith('오류:') || bibleText.includes('가져오는 데 실패')) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    fetch('/api/scripture-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reference: bibleRef,
+        passageText: bibleText,
+        locale: uiLanguage,
+      }),
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (data?.summary) setAiContext(data);
+      })
+      .catch(() => {
+        setAiContext(nextFallback);
+      });
+
+    return () => controller.abort();
+  }, [bibleRef, bibleText, uiLanguage]);
 
   useEffect(() => {
     if (!('speechSynthesis' in window)) return undefined;

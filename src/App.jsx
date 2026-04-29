@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import MainLayout from './components/MainLayout.jsx';
+import ReadingLayout from './components/ReadingLayout.jsx';
 import BoardList from './components/BoardList.jsx';
 import BoardWrite from './components/BoardWrite.jsx';
 import BoardDetail from './components/BoardDetail.jsx';
@@ -54,6 +55,7 @@ function formatKoreanDateTitle(date = new Date()) {
 }
 
 function App() {
+  const navigate = useNavigate();
   const [bibleRef, setBibleRef] = useState('');
   const [bibleText, setBibleText] = useState('');
   const [germanBibleText, setGermanBibleText] = useState('');
@@ -128,6 +130,7 @@ function App() {
   const handleOpenReadingPassage = async (bookKorean, chapter) => {
     const nextReference = `${bookKorean} ${chapter}장`;
     setIsLoading(true);
+    navigate('/');
     setBibleRef(nextReference);
     setBibleText('');
     setGermanBibleText('');
@@ -150,9 +153,9 @@ function App() {
           : `독일어 본문을 불러오지 못했습니다: ${germanVerses.reason.message}`
       );
 
-      window.requestAnimationFrame(() => {
+      window.setTimeout(() => {
         document.querySelector('.scripture-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
+      }, 120);
     } catch (error) {
       setBibleText(`본문을 가져오지 못했습니다: ${error.message}`);
     } finally {
@@ -295,11 +298,20 @@ ${finalPrayer}
               handleShareClick={handleShareClick}
               uiLanguage={uiLanguage}
               setUiLanguage={setUiLanguage}
-              handleOpenReadingPassage={handleOpenReadingPassage}
             />
           }
         />
         <Route path="/board" element={<BoardList />} />
+        <Route
+          path="/reading"
+          element={
+            <ReadingLayout
+              uiLanguage={uiLanguage}
+              setUiLanguage={setUiLanguage}
+              handleOpenReadingPassage={handleOpenReadingPassage}
+            />
+          }
+        />
         <Route path="/board/write" element={<BoardWrite />} />
         <Route path="/board/:id" element={<BoardDetail />} />
         <Route path="/board/edit/:id" element={<BoardEdit />} />
