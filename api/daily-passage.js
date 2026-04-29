@@ -32,6 +32,41 @@ const FALLBACK_PASSAGES = [
   },
 ];
 
+function normalizeSpaces(value = '') {
+  return String(value).replace(/\s+/g, ' ').trim();
+}
+
+function normalizeReference(reference = '') {
+  return normalizeSpaces(reference)
+    .replace(/(\d{1,2})\s*월\s*(\d{1,2})\s*일/, (_, month, day) => {
+      return `${month.padStart(2, '0')}월 ${day.padStart(2, '0')}일`;
+    })
+    .replace(/(\d+)\s*장\s*(\d+)\s*(?:-|~|–|—)\s*(\d+)/g, '$1장 $2 - $3')
+    .replace(/(\d+)\s*(?:-|~|–|—)\s*(\d+)$/g, '$1 - $2');
+}
+
+function formatVerseLine(verseNum, verseText) {
+  const number = String(verseNum || '').replace(/[^\d]/g, '');
+  const text = normalizeSpaces(verseText);
+  return number && text ? `${number}절 ${text}` : '';
+}
+
+function normalizeVerseBlock(text = '') {
+  return String(text)
+    .split('\n')
+    .map((line) => {
+      const trimmed = normalizeSpaces(line);
+      const match = trimmed.match(/^(\d+)\s*(?:절|[.)])?\s*(.+)$/);
+      return match ? `${match[1]}절 ${match[2]}` : trimmed;
+    })
+    .filter(Boolean)
+    .join('\n');
+}
+
+function formatDailyPassage(data) {
+  return `📆 ${normalizeReference(data.reference)}\n${normalizeVerseBlock(data.text)}`;
+}
+
 function parseWithJsdom(html) {
   const dom = new JSDOM(html);
   const { document } = dom.window;
@@ -53,7 +88,8 @@ function parseWithJsdom(html) {
       const verseNum = cells[0]?.textContent?.trim() || '';
       const verseText = cells[1]?.textContent?.trim() || '';
       if (cells.length === 2 && verseNum.length < 5 && !Number.isNaN(Number.parseInt(verseNum, 10)) && verseText) {
-        verses.push(`${verseNum}절 ${verseText}`);
+        const verseLine = formatVerseLine(verseNum, verseText);
+        if (verseLine) verses.push(verseLine);
       }
     });
     scriptureText = verses.join('\n');
@@ -68,9 +104,10 @@ function getFallbackPassage() {
 }
 
 function sendPassage(res, data, source = 'remote') {
+  const reference = normalizeReference(data.reference);
   return res.status(200).json({
-    reference: data.reference,
-    text: `📆 ${data.reference}\n${data.text}`,
+    reference,
+    text: formatDailyPassage({ ...data, reference }),
     source,
   });
 }
